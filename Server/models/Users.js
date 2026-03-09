@@ -39,7 +39,8 @@ const UserDataSchema = new Schema({
   password: { type: String, required: true },
   status: { type: String, default: 'active', required: true },
   createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date }
+  lastLogin: { type: Date },
+  canPostListings: { type: Boolean, default: false }
 }, {
   timestamps: true
 });

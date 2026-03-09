@@ -240,11 +240,29 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-const CarListing = require('../models/CarListing'); // Path to CarListing model
+const CarListing = require('../models/CarListing');
 const mongoose = require('mongoose');
 const Review = require('../models/Review');
+const Admin = require('../models/Admin');
 
 const router = express.Router();
+
+// Middleware: verify admin
+const verifyAdmin = async (req, res, next) => {
+  const adminId = req.headers['admin-id'];
+  if (!adminId) {
+    return res.status(401).json({ message: "Unauthorized. Admin access required." });
+  }
+  try {
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(401).json({ message: "Unauthorized. Admin not found." });
+    }
+    next();
+  } catch (error) {
+    return res.status(500).json({ message: "Authorization error." });
+  }
+};
 
 // Set up storage engine for multer
 const storage = multer.diskStorage({
@@ -277,7 +295,7 @@ const upload = multer({
 }).array('images', 5);
 
 
-router.post('/listings', upload, async (req, res) => {
+router.post('/listings', verifyAdmin, upload, async (req, res) => {
   try {
     const imageFiles = req.files;
     if (!imageFiles || imageFiles.length === 0) {
@@ -437,7 +455,7 @@ router.put('/listings/:id', async (req, res) => {
 
 
 // Delete a car listing by ID
-router.delete('/listings/:id', async (req, res) => {
+router.delete('/listings/:id', verifyAdmin, async (req, res) => {
   try {
     const deletedListing = await CarListing.findByIdAndDelete(req.params.id);
     if (!deletedListing) {

@@ -228,8 +228,8 @@ const CarListingSchema = new mongoose.Schema({
         default: false,
     },
     priceBreakdown: {
-        taxRate: { type: Number, default: 0.08 },
-        registrationFee: { type: Number, default: 300 },
+        taxRate: { type: Number, default: 0.16 }, // Kenya VAT rate
+        registrationFee: { type: Number, default: 5000 }, // KSH
     },
     engine: {
         type: String,

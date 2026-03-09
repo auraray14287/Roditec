@@ -66,37 +66,37 @@ router.get('/', (req, res) => {
     if (reportScope === 'monthly' && reportType === 'overall') {
         const headers = ['Month/Year', 'Total Listings', 'Active Listings', 'Sold Listings', 'Rented Listings', 'Requested Listings', 'Total Revenue'];
         const rows = [
-            ['January 2024', '150', '30', '50', '20', '50', '₹500,000'],
-            ['February 2024', '120', '40', '40', '30', '10', '₹400,000'],
-            ['March 2024', '180', '60', '60', '50', '10', '₹700,000'],
-            ['Total', '450', '130', '150', '100', '70', '₹1,600,000'],
+            ['January 2024', '150', '30', '50', '20', '50', 'KSH 500,000'],
+            ['February 2024', '120', '40', '40', '30', '10', 'KSH 400,000'],
+            ['March 2024', '180', '60', '60', '50', '10', 'KSH 700,000'],
+            ['Total', '450', '130', '150', '100', '70', 'KSH 1,600,000'],
         ];
         drawTable(headers, rows);
     } else if (reportScope === 'monthly' && reportType === 'sales') {
         const headers = ['Month/Year', 'Car Model', 'Year', 'Price', 'Sale Date', 'Customer Name', 'Location', 'Payment Status'];
         const rows = [
-            ['January 2024', 'Honda Civic', '2020', '₹20,000', '2024-01-15', 'John Doe', 'New York', 'Paid'],
-            ['January 2024', 'Ford Mustang', '2019', '₹30,000', '2024-01-20', 'Jane Smith', 'Los Angeles', 'Pending'],
-            ['February 2024', 'BMW X5', '2021', '₹50,000', '2024-02-05', 'Bob Johnson', 'Miami', 'Paid'],
-            ['Total', '', '', '₹100,000', '', '', ''],
+            ['January 2024', 'Honda Civic', '2020', 'KSH 20,000', '2024-01-15', 'John Doe', 'New York', 'Paid'],
+            ['January 2024', 'Ford Mustang', '2019', 'KSH 30,000', '2024-01-20', 'Jane Smith', 'Los Angeles', 'Pending'],
+            ['February 2024', 'BMW X5', '2021', 'KSH 50,000', '2024-02-05', 'Bob Johnson', 'Miami', 'Paid'],
+            ['Total', '', '', 'KSH 100,000', '', '', ''],
         ];
         drawTable(headers, rows);
     } else if (reportScope === 'monthly' && reportType === 'rentals') {
         const headers = ['Month/Year', 'Car Model', 'Year', 'Rent Price', 'Rent Start Date', 'Rent End Date', 'Customer Name', 'Location', 'Payment Status'];
         const rows = [
-            ['January 2024', 'Toyota Corolla', '2021', '₹1,500', '2024-01-10', '2024-01-15', 'Alice Brown', 'Boston', 'Paid'],
-            ['February 2024', 'Nissan Altima', '2020', '₹2,000', '2024-02-01', '2024-02-10', 'Mark White', 'Chicago', 'Pending'],
-            ['March 2024', 'Audi Q7', '2022', '₹3,000', '2024-03-05', '2024-03-12', 'Sara Lee', 'San Francisco', 'Paid'],
-            ['Total', '', '', '₹6,500', '', '', '', '', ''],
+            ['January 2024', 'Toyota Corolla', '2021', 'KSH 1,500', '2024-01-10', '2024-01-15', 'Alice Brown', 'Boston', 'Paid'],
+            ['February 2024', 'Nissan Altima', '2020', 'KSH 2,000', '2024-02-01', '2024-02-10', 'Mark White', 'Chicago', 'Pending'],
+            ['March 2024', 'Audi Q7', '2022', 'KSH 3,000', '2024-03-05', '2024-03-12', 'Sara Lee', 'San Francisco', 'Paid'],
+            ['Total', '', '', 'KSH 6,500', '', '', '', '', ''],
         ];
         drawTable(headers, rows);
     } else if (reportScope === 'monthly' && reportType === 'financials') {
         const headers = ['Month/Year', 'Total Sales Revenue', 'Total Rental Revenue', 'Total Payments', 'Pending Payments', 'Refunds Processed'];
         const rows = [
-            ['January 2024', '₹500,000', '₹15,000', '₹515,000', '₹50,000', '₹2,000'],
-            ['February 2024', '₹400,000', '₹20,000', '₹420,000', '₹20,000', '₹1,500'],
-            ['March 2024', '₹700,000', '₹25,000', '₹725,000', '₹25,000', '₹3,000'],
-            ['Total', '₹1,600,000', '₹60,000', '₹1,660,000', '₹95,000', '₹6,500'],
+            ['January 2024', 'KSH 500,000', 'KSH 15,000', 'KSH 515,000', 'KSH 50,000', 'KSH 2,000'],
+            ['February 2024', 'KSH 400,000', 'KSH 20,000', 'KSH 420,000', 'KSH 20,000', 'KSH 1,500'],
+            ['March 2024', 'KSH 700,000', 'KSH 25,000', 'KSH 725,000', 'KSH 25,000', 'KSH 3,000'],
+            ['Total', 'KSH 1,600,000', 'KSH 60,000', 'KSH 1,660,000', 'KSH 95,000', 'KSH 6,500'],
         ];
         drawTable(headers, rows);
     } else if (reportScope === 'monthly' && reportType === 'customerfeedback') {
@@ -117,27 +117,27 @@ router.get('/', (req, res) => {
         ];
         drawTable(headers, rows);
     } else if (reportScope === 'yearly' && reportType === 'sales') {
-        const headers = ['Year', 'Cars Sold', 'Revenue (₹)', 'Average Price per Car (₹)', 'Certified Cars Sold'];
+        const headers = ['Year', 'Cars Sold', 'Revenue (KSH )', 'Average Price per Car (KSH )', 'Certified Cars Sold'];
         const rows = [
-            ['2023', '150', '₹1,500,000', '₹10,000', '40'],
-            ['2022', '140', '₹1,400,000', '₹10,000', '35'],
-            ['2021', '130', '₹1,300,000', '₹10,000', '30'],
+            ['2023', '150', 'KSH 1,500,000', 'KSH 10,000', '40'],
+            ['2022', '140', 'KSH 1,400,000', 'KSH 10,000', '35'],
+            ['2021', '130', 'KSH 1,300,000', 'KSH 10,000', '30'],
         ];
         drawTable(headers, rows);
     } else if (reportScope === 'yearly' && reportType === 'rentals') {
-        const headers = ['Year', 'Cars Rented', 'Rental Transactions', 'Total Rental Income (₹)', 'Average Rental Duration (Days)'];
+        const headers = ['Year', 'Cars Rented', 'Rental Transactions', 'Total Rental Income (KSH )', 'Average Rental Duration (Days)'];
         const rows = [
-            ['2023', '120', '120', '₹72,000', '15'],
-            ['2022', '100', '100', '₹60,000', '14'],
-            ['2021', '90', '90', '₹54,000', '12'],
+            ['2023', '120', '120', 'KSH 72,000', '15'],
+            ['2022', '100', '100', 'KSH 60,000', '14'],
+            ['2021', '90', '90', 'KSH 54,000', '12'],
         ];
         drawTable(headers, rows);
     } else if (reportScope === 'yearly' && reportType === 'financials') {
-        const headers = ['Year', 'Total Revenue (₹)', 'Sales Revenue (₹)', 'Rental Income (₹)', 'Taxes Collected (₹)'];
+        const headers = ['Year', 'Total Revenue (KSH )', 'Sales Revenue (KSH )', 'Rental Income (KSH )', 'Taxes Collected (KSH )'];
         const rows = [
-            ['2023', '₹1,572,000', '₹1,500,000', '₹72,000', '₹126,000'],
-            ['2022', '₹1,460,000', '₹1,400,000', '₹60,000', '₹117,000'],
-            ['2021', '₹1,354,000', '₹1,300,000', '₹54,000', '₹108,000'],
+            ['2023', 'KSH 1,572,000', 'KSH 1,500,000', 'KSH 72,000', 'KSH 126,000'],
+            ['2022', 'KSH 1,460,000', 'KSH 1,400,000', 'KSH 60,000', 'KSH 117,000'],
+            ['2021', 'KSH 1,354,000', 'KSH 1,300,000', 'KSH 54,000', 'KSH 108,000'],
         ];
         drawTable(headers, rows);
     } else if (reportScope === 'yearly' && reportType === 'customerfeedback') {
