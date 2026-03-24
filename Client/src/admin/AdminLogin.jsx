@@ -1,65 +1,112 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import API_BASE_URL from '../config/apiConfig';
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Shield, Car, Lock, Mail } from "lucide-react";
+
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+  .al-root {
+    min-height:100vh; display:grid; grid-template-columns:1fr 1fr;
+    font-family:'Inter',sans-serif;
+  }
+
+  /* LEFT - dark admin panel */
+  .al-left {
+    background:linear-gradient(160deg,#0D1117 0%,#161B22 60%,#1A1A2E 100%);
+    display:flex; flex-direction:column; justify-content:space-between;
+    padding:48px; position:relative; overflow:hidden;
+  }
+  .al-left::before { content:''; position:absolute; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,rgba(59,107,240,.12) 0%,transparent 70%); bottom:-100px; right:-100px; pointer-events:none; }
+  .al-left::after  { content:''; position:absolute; width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(59,107,240,.08) 0%,transparent 70%); top:-60px; left:-60px; pointer-events:none; }
+
+  .al-brand { display:flex; align-items:center; gap:10px; font-family:'Manrope',sans-serif; font-size:22px; font-weight:800; color:#fff; text-decoration:none; z-index:1; }
+  .al-brand-dot { width:8px; height:8px; background:#3B6BF0; border-radius:50%; }
+
+  .al-left-content { z-index:1; }
+  .al-left-badge { display:inline-flex; align-items:center; gap:7px; background:rgba(59,107,240,.15); border:1px solid rgba(59,107,240,.3); border-radius:20px; padding:6px 14px; font-size:12px; color:#7BA4FF; font-weight:600; margin-bottom:20px; }
+  .al-left-title { font-family:'Manrope',sans-serif; font-size:clamp(24px,3vw,36px); font-weight:800; color:#fff; line-height:1.2; margin-bottom:14px; }
+  .al-left-title span { color:#3B6BF0; }
+  .al-left-sub { font-size:14px; color:rgba(255,255,255,.45); line-height:1.7; max-width:360px; }
+
+  .al-features { display:flex; flex-direction:column; gap:12px; z-index:1; }
+  .al-feature { display:flex; align-items:center; gap:12px; }
+  .al-feature-icon { width:32px; height:32px; border-radius:8px; background:rgba(59,107,240,.15); border:1px solid rgba(59,107,240,.25); display:flex; align-items:center; justify-content:center; color:#7BA4FF; flex-shrink:0; }
+  .al-feature-text { font-size:13px; color:rgba(255,255,255,.5); }
+
+  /* RIGHT - form */
+  .al-right { background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 40px; overflow-y:auto; }
+  .al-form-wrap { width:100%; max-width:400px; }
+
+  .al-form-title { font-family:'Manrope',sans-serif; font-size:26px; font-weight:800; color:#1A1A2E; margin-bottom:4px; }
+  .al-form-sub { font-size:14px; color:#8888A8; margin-bottom:32px; }
+
+  .al-notice { background:#FFF3CD; border:1px solid #FFDA6A; border-left:3px solid #F4A017; border-radius:8px; padding:10px 14px; font-size:13px; color:#856404; margin-bottom:24px; display:flex; align-items:center; gap:8px; }
+
+  .form-field { margin-bottom:18px; }
+  .form-label { display:block; font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#8888A8; margin-bottom:7px; }
+  .form-input-wrap { position:relative; }
+  .form-input-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#8888A8; pointer-events:none; }
+  .form-input { width:100%; background:#F7F8FC; border:1.5px solid #E5E7F0; border-radius:8px; padding:12px 14px 12px 40px; font-family:'Inter',sans-serif; font-size:14px; color:#1A1A2E; outline:none; transition:border .18s,background .18s; }
+  .form-input:focus { border-color:#3B6BF0; background:#fff; box-shadow:0 0 0 3px rgba(59,107,240,.08); }
+  .form-input.error { border-color:#E63946; }
+  .form-input::placeholder { color:#AAAACC; }
+  .pw-toggle { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#8888A8; display:flex; align-items:center; padding:0; transition:color .18s; }
+  .pw-toggle:hover { color:#3B6BF0; }
+  .field-error { font-size:12px; color:#E63946; margin-top:4px; display:block; }
+
+  .btn-admin { width:100%; background:#1A1A2E; color:#fff; border:none; border-radius:8px; padding:13px; font-family:'Inter',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; }
+  .btn-admin:hover { background:#2A2A3E; transform:translateY(-1px); box-shadow:0 6px 20px rgba(26,26,46,.3); }
+  .btn-admin:disabled { opacity:.6; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  @media(max-width:768px){
+    .al-root { grid-template-columns:1fr; }
+    .al-left { display:none; }
+    .al-right { padding:40px 24px; min-height:100vh; }
+  }
+`;
 
 export default function AdminLogin() {
-  const [adminData, setAdminData] = useState({
-    email: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
+  const [adminData,     setAdminData]     = useState({ email:"", password:"" });
+  const [errors,        setErrors]        = useState({ email:"", password:"" });
+  const [showPassword,  setShowPassword]  = useState(false);
+  const [submitting,    setSubmitting]    = useState(false);
   const navigate = useNavigate();
 
+  // original redirect logic
   useEffect(() => {
     const storedId = localStorage.getItem('id');
-    if (storedId) {
-      navigate('/AdminDashboard');
-    }
+    if (storedId) navigate('/AdminDashboard');
   }, [navigate]);
 
+  // original validation
   const validate = () => {
-    const newErrors = {
-      email: "",
-      password: "",
-    };
-
-    if (!adminData.email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(adminData.email)) newErrors.email = "Email format is invalid";
-    if (!adminData.password) newErrors.password = "Password is required";
-    else if (adminData.password.length < 6) newErrors.password = "Password should be at least 6 characters";
-
+    const newErrors = { email:"", password:"" };
+    if (!adminData.email)                              newErrors.email    = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(adminData.email))   newErrors.email    = "Email format is invalid";
+    if (!adminData.password)                           newErrors.password = "Password is required";
+    else if (adminData.password.length < 6)            newErrors.password = "Password must be at least 6 characters";
     setErrors(newErrors);
-    return Object.values(newErrors).every((error) => error === "");
+    return Object.values(newErrors).every(e => e === "");
   };
 
   const onChange = (event) => {
-    setAdminData((prevData) => ({
-      ...prevData,
-      [event.target.name]: event.target.value,
-    }));
-    setErrors((prevErrors) => ({ ...prevErrors, [event.target.name]: "" }));
+    setAdminData(prev => ({ ...prev, [event.target.name]: event.target.value }));
+    setErrors(prev => ({ ...prev, [event.target.name]: "" }));
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
+  // original submit logic
   const submitValue = async (event) => {
     event.preventDefault();
-
     if (!validate()) return;
-
+    setSubmitting(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/api/admin/admin/login`, adminData);
       if (response.data.flag === "1") {
         alert("Admin successfully logged in");
         localStorage.setItem("adminName", response.data.name);
-        localStorage.setItem("adminId", response.data.id);
+        localStorage.setItem("adminId",   response.data.id);
         window.location.href = "/AdminDashboard";
       } else {
         alert("Invalid email or password");
@@ -67,63 +114,98 @@ export default function AdminLogin() {
     } catch (error) {
       console.error("There was an error!", error);
       alert("An error occurred during login");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4">
-      <div className="w-full max-w-md bg-white shadow-2xl rounded-lg">
-        <form onSubmit={submitValue} className="space-y-6 p-8">
-          <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Admin Login</h1>
+    <div className="al-root">
+      <style>{STYLES}</style>
 
-          <div className="space-y-2">
-            <input
-              type="text"
-              name="email"
-              placeholder="Enter Admin Email"
-              onChange={onChange}
-              className={`w-full px-3 py-2 border rounded-md ${errors.email ? "border-red-500" : "border-gray-300"}`}
-            />
-            {errors.email && <small className="text-red-500">{errors.email}</small>}
-          </div>
+      {/* LEFT PANEL */}
+      <div className="al-left">
+        <div className="al-brand">
+          <Car size={20} color="#3B6BF0"/>
+          Roditec<span className="al-brand-dot"/>
+        </div>
 
-          <div className="space-y-2">
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Enter Admin Password"
-                onChange={onChange}
-                className={`w-full px-3 py-2 border rounded-md ${errors.password ? "border-red-500" : "border-gray-300"}`}
-              />
-              <button
-                type="button"
-                onClick={togglePasswordVisibility}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                )}
-              </button>
+        <div className="al-left-content">
+          <div className="al-left-badge"><Shield size={13}/> Admin Access Only</div>
+          <h2 className="al-left-title">Admin<br /><span>Control Panel</span></h2>
+          <p className="al-left-sub">
+            Manage listings, bookings, payments, users and reports from one centralised dashboard.
+          </p>
+        </div>
+
+        <div className="al-features">
+          {[
+            'Manage all car listings & inventory',
+            'View and approve user bookings',
+            'Process and track all payments',
+            'Register users & manage accounts',
+            'Generate reports in KSH',
+          ].map((f, i) => (
+            <div key={i} className="al-feature">
+              <div className="al-feature-icon"><Shield size={13}/></div>
+              <div className="al-feature-text">{f}</div>
             </div>
-            {errors.password && <small className="text-red-500">{errors.password}</small>}
+          ))}
+        </div>
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div className="al-right">
+        <div className="al-form-wrap">
+          <div className="al-form-title">Admin Sign In</div>
+          <div className="al-form-sub">Enter your admin credentials to continue</div>
+
+          <div className="al-notice">
+            ⚠️ This portal is restricted to authorised administrators only.
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-900 transition-colors"
-          >
-            Log in as Admin
-          </button>
+          <form onSubmit={submitValue} noValidate>
+            {/* Email */}
+            <div className="form-field">
+              <label className="form-label">Admin Email</label>
+              <div className="form-input-wrap">
+                <Mail size={15} className="form-input-icon"/>
+                <input
+                  type="text" name="email"
+                  placeholder="admin@roditec.co.ke"
+                  onChange={onChange}
+                  className={`form-input${errors.email ? ' error' : ''}`}
+                />
+              </div>
+              {errors.email && <span className="field-error">{errors.email}</span>}
+            </div>
 
-        </form>
+            {/* Password */}
+            <div className="form-field">
+              <label className="form-label">Password</label>
+              <div className="form-input-wrap">
+                <Lock size={15} className="form-input-icon"/>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="••••••••"
+                  onChange={onChange}
+                  className={`form-input${errors.password ? ' error' : ''}`}
+                  style={{ paddingRight: 42 }}
+                />
+                <button type="button" className="pw-toggle" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
+                </button>
+              </div>
+              {errors.password && <span className="field-error">{errors.password}</span>}
+            </div>
+
+            <button type="submit" className="btn-admin" disabled={submitting}>
+              <Shield size={15}/>
+              {submitting ? 'Signing in…' : 'Sign In as Admin'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

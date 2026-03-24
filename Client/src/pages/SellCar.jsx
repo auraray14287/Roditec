@@ -1,743 +1,524 @@
-import { useState, useEffect } from 'react'
-import { ArrowRight, Camera, Loader2 } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Camera, Loader2, ShieldX, Check } from 'lucide-react';
 import axios from 'axios';
 import UserAuth from '../auth/UserAuth';
 import API_BASE_URL from '../config/apiConfig';
+
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+  .sc-root { min-height:100vh; background:#F7F8FC; font-family:'Inter',sans-serif; color:#1A1A2E; }
+
+  /* HERO HEADER */
+  .sc-header { background:#fff; border-bottom:1px solid #E5E7F0; padding:32px 0; }
+  .sc-header-inner { max-width:960px; margin:0 auto; padding:0 24px; }
+  .sc-header-label { font-size:11px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:#3B6BF0; margin-bottom:6px; }
+  .sc-header-title { font-family:'Manrope',sans-serif; font-weight:800; font-size:clamp(22px,3vw,30px); color:#1A1A2E; margin-bottom:8px; }
+  .sc-header-sub { font-size:14px; color:#8888A8; }
+
+  /* STEPPER */
+  .sc-stepper { max-width:960px; margin:0 auto; padding:28px 24px 0; }
+  .sc-steps { display:flex; align-items:center; gap:0; margin-bottom:32px; overflow-x:auto; padding-bottom:4px; }
+  .sc-step { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .sc-step-circle {
+    width:32px; height:32px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:13px;
+    flex-shrink:0; transition:all .2s;
+  }
+  .sc-step-circle.done { background:#3B6BF0; color:#fff; }
+  .sc-step-circle.active { background:#3B6BF0; color:#fff; box-shadow:0 0 0 4px rgba(59,107,240,.15); }
+  .sc-step-circle.pending { background:#E5E7F0; color:#8888A8; }
+  .sc-step-label { font-size:12px; font-weight:600; white-space:nowrap; }
+  .sc-step-label.done,.sc-step-label.active { color:#1A1A2E; }
+  .sc-step-label.pending { color:#8888A8; }
+  .sc-step-divider { flex:1; min-width:24px; height:2px; background:#E5E7F0; margin:0 8px; }
+  .sc-step-divider.done { background:#3B6BF0; }
+
+  /* FORM CARD */
+  .sc-card { background:#fff; border:1px solid #E5E7F0; border-radius:14px; padding:32px; max-width:960px; margin:0 auto 32px; }
+  .sc-step-title { font-family:'Manrope',sans-serif; font-weight:800; font-size:18px; color:#1A1A2E; margin-bottom:24px; display:flex; align-items:center; gap:10px; }
+  .sc-step-badge { width:28px; height:28px; border-radius:50%; background:#EEF2FF; color:#3B6BF0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+
+  .sc-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media(max-width:600px){ .sc-grid { grid-template-columns:1fr; } }
+  .sc-field { display:flex; flex-direction:column; gap:6px; }
+  .sc-field.full { grid-column:1/-1; }
+  .sc-label { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#8888A8; }
+  .sc-input,.sc-select,.sc-textarea {
+    background:#F7F8FC; border:1px solid #E5E7F0; border-radius:8px;
+    padding:11px 14px; color:#1A1A2E; font-family:'Inter',sans-serif;
+    font-size:13px; outline:none; transition:border .18s;
+    appearance:none; -webkit-appearance:none; width:100%;
+  }
+  .sc-select {
+    background-image:url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238888A8' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center; padding-right:36px;
+  }
+  .sc-select option { background:#fff; color:#1A1A2E; }
+  .sc-input:focus,.sc-select:focus,.sc-textarea:focus { border-color:#3B6BF0; background:#fff; }
+  .sc-input::placeholder,.sc-textarea::placeholder { color:#AAAACC; }
+  .sc-textarea { resize:vertical; min-height:100px; }
+
+  /* CHECKBOXES */
+  .sc-check-group { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px; }
+  .sc-check-label { display:flex; align-items:center; gap:8px; font-size:13px; color:#4A4A68; cursor:pointer; }
+  .sc-check-label input[type=checkbox] { width:16px; height:16px; accent-color:#3B6BF0; cursor:pointer; }
+
+  /* IMAGE UPLOAD */
+  .sc-upload-zone {
+    border:2px dashed #C7D7FA; border-radius:10px; padding:40px 20px;
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    background:#EEF2FF; cursor:pointer; transition:all .2s;
+  }
+  .sc-upload-zone:hover { border-color:#3B6BF0; background:#E6EDFF; }
+  .sc-upload-icon { width:48px; height:48px; background:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#3B6BF0; box-shadow:0 2px 8px rgba(59,107,240,.15); }
+  .sc-upload-text { font-size:13px; color:#4A4A68; text-align:center; }
+  .sc-upload-link { color:#3B6BF0; font-weight:600; }
+  .sc-upload-hint { font-size:11px; color:#8888A8; }
+  .sc-preview-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; margin-top:16px; }
+  .sc-preview-item { position:relative; border-radius:8px; overflow:hidden; aspect-ratio:1; }
+  .sc-preview-item img { width:100%; height:100%; object-fit:cover; }
+  .sc-preview-remove { position:absolute; top:4px; right:4px; width:22px; height:22px; background:#E63946; color:#fff; border:none; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; line-height:1; }
+
+  /* TIPS BOX */
+  .sc-tips { background:#EEF2FF; border:1px solid rgba(59,107,240,.15); border-radius:10px; padding:16px 18px; margin-top:20px; }
+  .sc-tips-title { font-size:12px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#3B6BF0; margin-bottom:8px; }
+  .sc-tips ul { margin:0; padding-left:18px; }
+  .sc-tips li { font-size:12px; color:#4A4A68; margin-bottom:4px; }
+
+  /* ERROR */
+  .sc-error { background:#FEF2F2; border:1px solid rgba(230,57,70,.2); border-radius:8px; padding:12px 16px; margin-bottom:20px; font-size:13px; color:#E63946; }
+
+  /* NAV BUTTONS */
+  .sc-nav { display:flex; justify-content:space-between; align-items:center; margin-top:28px; padding-top:20px; border-top:1px solid #E5E7F0; }
+  .sc-nav-left { display:flex; gap:10px; }
+  .btn-back { display:flex; align-items:center; gap:6px; background:#F7F8FC; color:#4A4A68; border:1px solid #E5E7F0; padding:10px 20px; border-radius:8px; font-family:'Inter',sans-serif; font-weight:500; font-size:13px; cursor:pointer; transition:all .18s; }
+  .btn-back:hover { border-color:#3B6BF0; color:#3B6BF0; }
+  .btn-next { display:flex; align-items:center; gap:6px; background:#3B6BF0; color:#fff; border:none; padding:10px 24px; border-radius:8px; font-family:'Inter',sans-serif; font-weight:600; font-size:13px; cursor:pointer; transition:all .18s; }
+  .btn-next:hover:not(:disabled) { background:#2952CC; transform:translateY(-1px); box-shadow:0 4px 14px rgba(59,107,240,.3); }
+  .btn-next:disabled { opacity:.6; cursor:not-allowed; }
+
+  /* ACCESS SCREENS */
+  .sc-access-screen { min-height:100vh; background:#F7F8FC; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .sc-access-card { background:#fff; border:1px solid #E5E7F0; border-radius:16px; padding:48px 40px; max-width:440px; width:100%; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,.06); }
+  .sc-access-icon { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+  .sc-access-icon.deny { background:#FEF2F2; color:#E63946; }
+  .sc-access-title { font-family:'Manrope',sans-serif; font-weight:800; font-size:22px; color:#1A1A2E; margin-bottom:10px; }
+  .sc-access-text { font-size:14px; color:#8888A8; line-height:1.6; margin-bottom:28px; }
+  .btn-home { display:inline-flex; align-items:center; gap:6px; background:#3B6BF0; color:#fff; border:none; padding:11px 24px; border-radius:8px; font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; text-decoration:none; transition:all .18s; }
+  .btn-home:hover { background:#2952CC; }
+`;
+
+const STEPS = ['Basic Information', 'Specifications', 'Features & Extras', 'Photo Upload'];
 
 function SellCar() {
   const [step, setStep] = useState(1);
   const [selectedImages, setSelectedImages] = useState([]);
   const [imageUrls, setImageUrls] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-  const storedUserId = localStorage.getItem('id');
-  // useEffect(() => {
-    
-
-  //   if (storedUserId) {
-  //     setFormData(prevFormData => ({
-  //       ...prevFormData,
-  //       user_id: storedUserId  // Keep it as a string
-  //     }));
-  //   } else {
-  //     setError('User ID not found. Please log in again.');
-  //   }
-  // }, []);
+  const [isAuthorized, setIsAuthorized] = useState(null);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const userId = localStorage.getItem('id');
+
+  // original permission check
+  useEffect(() => {
+    const checkPostingPermission = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/users/profile/${userId}`);
+        const user = response.data;
+        const allowed = user.role === 'admin' || user.role === 'poster' || user.canPostListings === true;
+        setIsAuthorized(allowed);
+      } catch (err) {
+        console.error('Permission check failed:', err);
+        setIsAuthorized(false);
+      }
+    };
+    if (userId) checkPostingPermission();
+    else setIsAuthorized(false);
+  }, [userId]);
 
   const [formData, setFormData] = useState({
     user_id: String(userId),
     listing_status: 'requested',
-    owner: '',
-    RentSell: '',
-    make: '',
-    model: '',
-    year: '',
-    mileage: '',
-    price: '',
-    location: '',
-    condition: '',
-    filename: '',
-    url: '',
-    engine: '',
-    transmission: '',
-    fuelType: '',
-    seatingCapacity: '',
-    interiorColor: '',
-    exteriorColor: '',
-    carType: '',
-    vin: '',
-    serviceHistory: {
-      recentServicing: false,
-      noAccidentHistory: false,
-      modifications: false
-    },
-    extraFeatures: {
-      gps: false,
-      sunroof: false,
-      leatherSeats: false,
-      backupCamera: false
-    },
-    certificationReport: null,
-    description: '',
-    modificationDetails: '',
-    contactMethods: [],
-    availability: '',
-    responseTime: ''
+    owner: '', RentSell: '', make: '', model: '', year: '',
+    mileage: '', price: '', location: '', condition: '',
+    filename: '', url: '', engine: '', transmission: '', fuelType: '',
+    seatingCapacity: '', interiorColor: '', exteriorColor: '',
+    carType: '', vin: '',
+    serviceHistory: { recentServicing: false, noAccidentHistory: false, modifications: false },
+    extraFeatures: { gps: false, sunroof: false, leatherSeats: false, backupCamera: false },
+    certificationReport: null, description: '', modificationDetails: '',
+    contactMethods: [], availability: '', responseTime: ''
   });
 
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  // original handlers
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length > 5) {
-      setError('Maximum 5 images allowed');
-      return;
-    }
-
+    if (files.length > 5) { setError('Maximum 5 images allowed'); return; }
     setSelectedImages(files);
-    const urls = files.map(file => URL.createObjectURL(file));
-    setImageUrls(urls);
+    setImageUrls(files.map(f => URL.createObjectURL(f)));
   };
 
   const removeImage = (index) => {
-    const newImages = [...selectedImages];
-    const newUrls = [...imageUrls];
-
-    URL.revokeObjectURL(newUrls[index]);
-    newImages.splice(index, 1);
-    newUrls.splice(index, 1);
-
-    setSelectedImages(newImages);
-    setImageUrls(newUrls);
+    const ni = [...selectedImages]; const nu = [...imageUrls];
+    URL.revokeObjectURL(nu[index]);
+    ni.splice(index,1); nu.splice(index,1);
+    setSelectedImages(ni); setImageUrls(nu);
   };
 
   const handleInputChange = (e) => {
     const { id, value, type, checked } = e.target;
-
-    const safeValue = value === null ? '' : value;
-
     if (id.includes('.')) {
       const [parent, child] = id.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: type === 'checkbox' ? checked : value
-        }
-      }));
+      setFormData(prev => ({ ...prev, [parent]: { ...prev[parent], [child]: type==='checkbox' ? checked : value } }));
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [id]: type === 'checkbox' ? checked : value
-      }));
+      setFormData(prev => ({ ...prev, [id]: type==='checkbox' ? checked : value }));
     }
   };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setIsSubmitting(true);
-  //   setError('');
-
-  //   try {
-  //     const formDataToSend = new FormData();
-
-  //     Object.keys(formData).forEach(key => {
-  //       if (typeof formData[key] === 'object' && formData[key] !== null) {
-  //         formDataToSend.append(key, JSON.stringify(formData[key]));
-  //       } else {
-  //         formDataToSend.append(key, formData[key]);
-  //       }
-  //     });
-
-  //     selectedImages.forEach((image, index) => {
-  //       formDataToSend.append('images', image);
-  //     });
-
-  //     const response = await fetch('${API_BASE_URL}/api/listings/listings', {
-  //       method: 'POST',
-  //       body: formDataToSend,
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error('Failed to create listing');
-  //     }
-
-  //     const data = await response.json();
-  //     console.log('Listing created:', data);
-
-  //     alert('Your car listing has been successfully created!');
-
-  //   } catch (err) {
-  //     setError(err.message || 'An error occurred while creating the listing');
-  //     console.error('Submission error:', err);
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError('');
-
+    setIsSubmitting(true); setError('');
     try {
-      // Validate user ID before submission
-      // if (!formData.user_id) {
-      //   throw new Error('User ID is missing. Please log in again.');
-      // }
-
-      const formDataToSend = new FormData();
-
+      const fd = new FormData();
       Object.keys(formData).forEach(key => {
-        if (typeof formData[key] === 'object' && formData[key] !== null) {
-          formDataToSend.append(key, JSON.stringify(formData[key]));
-        } else {
-          formDataToSend.append(key, formData[key]);
-        }
+        if (typeof formData[key]==='object' && formData[key]!==null) fd.append(key, JSON.stringify(formData[key]));
+        else fd.append(key, formData[key]);
       });
-
-      selectedImages.forEach((image, index) => {
-        formDataToSend.append('images', image);
-      });
-
+      selectedImages.forEach(img => fd.append('images', img));
       const response = await fetch(`${API_BASE_URL}/api/listings/listings`, {
         method: 'POST',
-        body: formDataToSend,
+        headers: { 'user-id': userId },
+        body: fd,
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to create listing');
       }
-
-      const data = await response.json();
-      console.log('Listing created:', data);
-
-      alert('Your car listing request has been successfully processed!');
-
+      alert('Your car listing request has been successfully submitted!');
     } catch (err) {
       setError(err.message || 'An error occurred while creating the listing');
-      console.error('Submission error:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const nextStep = () => {
-    setStep(step + 1);
-  };
+  const nextStep = () => { setError(''); setStep(s => s+1); };
+  const prevStep = () => { setError(''); setStep(s => s-1); };
 
-  const prevStep = () => setStep(step - 1);
+  // Loading
+  if (isAuthorized === null) {
+    return (
+      <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F7F8FC' }}>
+        <Loader2 style={{ animation:'spin 1s linear infinite', color:'#3B6BF0', width:40, height:40 }}/>
+        <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
-  const validateStep = (currentStep) => {
-    // switch (currentStep) {
-    //   case 1:
-    //     if (!formData.owner || !formData.RentSell || !formData.make ||
-    //       !formData.model || !formData.year || !formData.mileage ||
-    //       !formData.price || !formData.location) {
-    //       setError('Please fill in all required fields');
-    //       return false;
-    //     }
-    //     break;
-    //   case 2:
-    //     if (!formData.engine || !formData.transmission || !formData.fuelType ||
-    //       !formData.seatingCapacity || !formData.exteriorColor ||
-    //       !formData.interiorColor || !formData.carType ||
-    //       !formData.condition) {
-    //       setError('Please fill in all required fields');
-    //       return false;
-    //     }
-    //     break;
-    //   case 4:
-    //     if (selectedImages.length === 0) {
-    //       setError('Please upload at least one image');
-    //       return false;
-    //     }
-    //     break;
-    //   default:
-    //     setError('');
-    //     return true;
-    // }
-    setError('');
-    return true;
-  };
+  // Not authorized
+  if (!isAuthorized) {
+    return (
+      <>
+        <style>{STYLES}</style>
+        <div className="sc-access-screen">
+          <div className="sc-access-card">
+            <div className="sc-access-icon deny"><ShieldX size={32}/></div>
+            <div className="sc-access-title">Access Restricted</div>
+            <div className="sc-access-text">
+              You are not authorized to post car listings. Only admin-approved users can create listings on Roditec.
+              Please contact the admin to request posting access.
+            </div>
+            <a href="/" className="btn-home">Back to Home</a>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
-      <header className="bg-white dark:bg-gray-800 shadow transition-colors duration-200">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Sell Your Car Hassle-Free</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-300">Reach thousands of potential buyers with our quick and easy listing process</p>
-        </div>
-      </header>
+    <>
+      <style>{STYLES}</style>
+      <div className="sc-root">
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between mb-8">
-          <p className='dark:text-white font-medium text-xl'>List Your Car</p>
-          <p className='dark:text-white font-medium text-xl'>Get Contacted</p>
-          <p className='dark:text-white font-medium text-xl'>Sell with Confidence</p>
-        </div>
-
-        <div className="flex justify-between mb-8">
-          {['Basic Information', 'Car Condition and Specifications', 'Additional Features', 'Images upload'].map((stepTitle, index) => (
-            <div key={index} className="flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${index + 1 <= step ? 'bg-black text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                } transition-colors duration-200`}>
-                {index + 1}
-              </div>
-              <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{stepTitle}</span>
-              {index < 3 && <ArrowRight className="mx-4 text-gray-400 dark:text-gray-600" />}
-            </div>
-          ))}
-        </div>
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-md transition-colors duration-200">
-            {error}
+        {/* HEADER */}
+        <div className="sc-header">
+          <div className="sc-header-inner">
+            <div className="sc-header-label">List your car</div>
+            <div className="sc-header-title">Sell Your Car Hassle-Free</div>
+            <div className="sc-header-sub">Reach thousands of potential buyers with our quick and easy listing process</div>
           </div>
-        )}
+        </div>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md transition-all duration-300">
-          {/* Step 1: Basic Information */}
-          {step === 1 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Step 1: Basic Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="owner" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Owner</label>
-                  <input
-                    type="number"
-                    id="owner"
-                    value={formData.owner}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter Owners"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="RentSell" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Rent or Sell</label>
-                  <select
-                    id="RentSell"
-                    value={formData.RentSell}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                  >
-                    <option value="">Select</option>
-                    <option value="Sell">Sell</option>
-                    <option value="Rent">Rent</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="make" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Car Make</label>
-                  <input
-                    type="text"
-                    id="make"
-                    value={formData.make}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter manufacturer"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Car Model</label>
-                  <input
-                    type="text"
-                    id="model"
-                    value={formData.model}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter model"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="year" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Year of Manufacture</label>
-                  <input
-                    type="number"
-                    id="year"
-                    value={formData.year}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter year"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="mileage" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Mileage</label>
-                  <input
-                    type="number"
-                    id="mileage"
-                    value={formData.mileage}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter mileage"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Price</label>
-                  <input
-                    type="number"
-                    id="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter price"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
-                  <input
-                    type="text"
-                    id="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="City or ZIP code"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+        <div className="sc-stepper">
 
-          {/* Step 2: Car Condition and Specifications */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Step 2: Car Condition and Specifications</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="engine" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Engine</label>
-                  <input
-                    type="text"
-                    id="engine"
-                    value={formData.engine}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter Engine Type"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="transmission" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Transmission</label>
-                  <select
-                    id="transmission"
-                    value={formData.transmission}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                  >
-                    <option value="">Select Transmission</option>
-                    <option value="automatic">Automatic</option>
-                    <option value="manual">Manual</option>
-                    <option value="cvt">CVT</option>
-                    <option value="semi-automatic">Semi-Automatic</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="fuelType" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fuel Type</label>
-                  <select
-                    id="fuelType"
-                    value={formData.fuelType}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                  >
-                    <option value="">Select Fuel Type</option>
-                    <option value="petrol">Petrol</option>
-                    <option value="diesel">Diesel</option>
-                    <option value="electric">Electric</option>
-                    <option value="hybrid">Hybrid</option>
-                    <option value="cng">CNG</option>
-                    <option value="lpg">LPG</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="seatingCapacity" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Seating Capacity</label>
-                  <input
-                    type="number"
-                    id="seatingCapacity"
-                    value={formData.seatingCapacity}
-                    onChange={handleInputChange}
-                    min="2"
-                    max="15"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter Seating Capacity"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="exteriorColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Exterior Color</label>
-                  <input
-                    type="text"
-                    id="exteriorColor"
-                    value={formData.exteriorColor}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter exterior color"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="interiorColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Interior Color</label>
-                  <input
-                    type="text"
-                    id="interiorColor"
-                    value={formData.interiorColor}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter interior color"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="carType" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Car Type</label>
-                  <select
-                    id="carType"
-                    value={formData.carType}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                  >
-                    <option value="">Select Car Type</option>
-                    <option value="sedan">Sedan</option>
-                    <option value="suv">SUV</option>
-                    <option value="hatchback">Hatchback</option>
-                    <option value="truck">Truck</option>
-                    <option value="coupe">Coupe</option>
-                    <option value="wagon">Wagon</option>
-                    <option value="van">Van</option>
-                    <option value="convertible">Convertible</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="vin" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    VIN <span className="text-gray-500 dark:text-gray-400 text-sm">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="vin"
-                    value={formData.vin}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Enter VIN number"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Vehicle Condition</label>
-                <div className="mt-2">
-                  <select
-                    name="condition"
-                    id="condition"
-                    value={formData.condition || ''}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                  >
-                    <option value="">Select Condition</option>
-                    <option value="Excellent">Excellent</option>
-                    <option value="Good">Good</option>
-                    <option value="Fair">Fair</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service History</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      id="serviceHistory.recentServicing"
-                      checked={formData.serviceHistory.recentServicing}
-                      onChange={handleInputChange}
-                      className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
-                    />
-                    <span className="ml-2 text-gray-700 dark:text-gray-300">Recent servicing</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      id="serviceHistory.noAccidentHistory"
-                      checked={formData.serviceHistory.noAccidentHistory}
-                      onChange={handleInputChange}
-                      className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
-                    />
-                    <span className="ml-2 text-gray-700 dark:text-gray-300">No accident history</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      id="serviceHistory.modifications"
-                      checked={formData.serviceHistory.modifications}
-                      onChange={handleInputChange}
-                      className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
-                    />
-                    <span className="ml-2 text-gray-700 dark:text-gray-300">Modifications</span>
-                  </label>
-                </div>
-              </div>
-
-              {formData.serviceHistory.modifications && (
-                <div className="mt-4">
-                  <label htmlFor="modificationDetails" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Modification Details
-                  </label>
-                  <textarea
-                    id="modificationDetails"
-                    value={formData.modificationDetails || ''}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                    placeholder="Please describe any modifications made to the vehicle"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 3: Additional Features and Highlights */}
-          {step === 3 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Step 3: Additional Features and Highlights</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Extra Features</label>
-                  <div className="mt-2 space-y-2">
-                    {[
-                      { key: 'gps', label: 'GPS' },
-                      { key: 'sunroof', label: 'Sunroof' },
-                      { key: 'leatherSeats', label: 'Leather seats' },
-                      { key: 'backupCamera', label: 'Backup camera' }
-                    ].map((feature) => (
-                      <label key={feature.key} className="inline-flex items-center">
-                        <input
-                          type="checkbox"
-                          id={`extraFeatures.${feature.key}`}
-                          checked={formData.extraFeatures[feature.key]}
-                          onChange={handleInputChange}
-                          className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
-                        />
-                        <span className="ml-2 text-gray-700 dark:text-gray-300">{feature.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="certification" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Certification/Inspection Report</label>
-                  <input
-                    type="file"
-                    id="certification"
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-full file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100
-                    dark:file:bg-gray-700 dark:file:text-gray-300
-                    dark:hover:file:bg-gray-600"
-                  />
-                </div>
-              </div>
-              <div className="mt-4">
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200"
-                  placeholder="Describe the car's condition, any unique features, or recent upgrades"
-                ></textarea>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Photo Upload */}
-          {step === 4 && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Step 4: Photo Upload</h2>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
-                <div className="space-y-1 text-center">
-                  <Camera className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                    <label
-                      htmlFor="file-upload"
-                      className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 transition-colors duration-200"
-                    >
-                      <span>Upload files</span>
-                      <input
-                        id="file-upload"
-                        name="file-upload"
-                        type="file"
-                        className="sr-only"
-                        onChange={handleImageSelect}
-                        accept="image/jpeg,image/png,image/gif,image/webp"
-                        multiple
-                        maxLength={5}
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 10MB (Max 5 images)</p>
-                </div>
-              </div>
-
-              {imageUrls.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {imageUrls.map((url, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={url}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors duration-200"
-                        aria-label="Remove image"
-                      >
-                        ×
-                      </button>
+          {/* STEP INDICATOR */}
+          <div className="sc-steps">
+            {STEPS.map((label, i) => {
+              const num = i + 1;
+              const state = num < step ? 'done' : num === step ? 'active' : 'pending';
+              return (
+                <React.Fragment key={i}>
+                  <div className="sc-step">
+                    <div className={`sc-step-circle ${state}`}>
+                      {state === 'done' ? <Check size={14}/> : num}
                     </div>
-                  ))}
-                </div>
+                    <span className={`sc-step-label ${state}`}>{label}</span>
+                  </div>
+                  {i < STEPS.length - 1 && <div className={`sc-step-divider${state==='done'?' done':''}`}/>}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {error && <div className="sc-error">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="sc-card">
+
+              {/* STEP 1 */}
+              {step === 1 && (
+                <>
+                  <div className="sc-step-title"><span className="sc-step-badge">1</span> Basic Information</div>
+                  <div className="sc-grid">
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="owner">Owner</label>
+                      <input className="sc-input" type="number" id="owner" value={formData.owner} onChange={handleInputChange} placeholder="Enter Owner ID"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="RentSell">Rent or Sell</label>
+                      <select className="sc-select" id="RentSell" value={formData.RentSell} onChange={handleInputChange}>
+                        <option value="">Select</option>
+                        <option value="Sell">Sell</option>
+                        <option value="Rent">Rent</option>
+                      </select>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="make">Car Make</label>
+                      <input className="sc-input" type="text" id="make" value={formData.make} onChange={handleInputChange} placeholder="e.g. Toyota"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="model">Car Model</label>
+                      <input className="sc-input" type="text" id="model" value={formData.model} onChange={handleInputChange} placeholder="e.g. Corolla"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="year">Year of Manufacture</label>
+                      <input className="sc-input" type="number" id="year" value={formData.year} onChange={handleInputChange} placeholder="e.g. 2019"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="mileage">Mileage (km)</label>
+                      <input className="sc-input" type="number" id="mileage" value={formData.mileage} onChange={handleInputChange} placeholder="e.g. 60000"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="price">Price (KSH)</label>
+                      <input className="sc-input" type="number" id="price" value={formData.price} onChange={handleInputChange} placeholder="e.g. 1500000"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="location">Location</label>
+                      <input className="sc-input" type="text" id="location" value={formData.location} onChange={handleInputChange} placeholder="City or Town"/>
+                    </div>
+                  </div>
+                </>
               )}
 
-              <div className="mt-4">
-                <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                  Image Tips and Best Practices
-                </h3>
-                <ul className="mt-2 list-disc list-inside text-sm text-gray-600 dark:text-gray-400">
-                  <li>Use natural light for better quality</li>
-                  <li>Take photos from multiple angles (front, side, interior)</li>
-                  <li>Include close-ups of any special features</li>
-                  <li>Avoid using filters</li>
-                </ul>
-              </div>
-            </div>
-          )}
+              {/* STEP 2 */}
+              {step === 2 && (
+                <>
+                  <div className="sc-step-title"><span className="sc-step-badge">2</span> Car Specifications</div>
+                  <div className="sc-grid">
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="engine">Engine</label>
+                      <input className="sc-input" type="text" id="engine" value={formData.engine} onChange={handleInputChange} placeholder="e.g. 1.8L 4-cylinder"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="transmission">Transmission</label>
+                      <select className="sc-select" id="transmission" value={formData.transmission} onChange={handleInputChange}>
+                        <option value="">Select Transmission</option>
+                        <option value="automatic">Automatic</option>
+                        <option value="manual">Manual</option>
+                        <option value="cvt">CVT</option>
+                        <option value="semi-automatic">Semi-Automatic</option>
+                      </select>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="fuelType">Fuel Type</label>
+                      <select className="sc-select" id="fuelType" value={formData.fuelType} onChange={handleInputChange}>
+                        <option value="">Select Fuel Type</option>
+                        <option value="petrol">Petrol</option>
+                        <option value="diesel">Diesel</option>
+                        <option value="electric">Electric</option>
+                        <option value="hybrid">Hybrid</option>
+                        <option value="cng">CNG</option>
+                        <option value="lpg">LPG</option>
+                      </select>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="seatingCapacity">Seating Capacity</label>
+                      <input className="sc-input" type="number" id="seatingCapacity" value={formData.seatingCapacity} onChange={handleInputChange} min="2" max="15" placeholder="e.g. 5"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="exteriorColor">Exterior Color</label>
+                      <input className="sc-input" type="text" id="exteriorColor" value={formData.exteriorColor} onChange={handleInputChange} placeholder="e.g. Pearl White"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="interiorColor">Interior Color</label>
+                      <input className="sc-input" type="text" id="interiorColor" value={formData.interiorColor} onChange={handleInputChange} placeholder="e.g. Black"/>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="carType">Car Type</label>
+                      <select className="sc-select" id="carType" value={formData.carType} onChange={handleInputChange}>
+                        <option value="">Select Car Type</option>
+                        <option value="sedan">Sedan</option>
+                        <option value="suv">SUV</option>
+                        <option value="hatchback">Hatchback</option>
+                        <option value="truck">Truck</option>
+                        <option value="coupe">Coupe</option>
+                        <option value="wagon">Wagon</option>
+                        <option value="van">Van</option>
+                        <option value="convertible">Convertible</option>
+                      </select>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="vin">VIN <span style={{ textTransform:'none', fontWeight:500, color:'#AAAACC' }}>(Optional)</span></label>
+                      <input className="sc-input" type="text" id="vin" value={formData.vin} onChange={handleInputChange} placeholder="Vehicle ID number"/>
+                    </div>
+                    <div className="sc-field full">
+                      <label className="sc-label" htmlFor="condition">Vehicle Condition</label>
+                      <select className="sc-select" id="condition" value={formData.condition} onChange={handleInputChange}>
+                        <option value="">Select Condition</option>
+                        <option value="Excellent">Excellent</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                      </select>
+                    </div>
+                    <div className="sc-field full">
+                      <label className="sc-label">Service History</label>
+                      <div className="sc-check-group">
+                        {[
+                          { key:'recentServicing',    label:'Recent servicing' },
+                          { key:'noAccidentHistory',  label:'No accident history' },
+                          { key:'modifications',      label:'Has modifications' },
+                        ].map(({ key, label }) => (
+                          <label key={key} className="sc-check-label">
+                            <input type="checkbox" id={`serviceHistory.${key}`} checked={formData.serviceHistory[key]} onChange={handleInputChange}/>
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    {formData.serviceHistory.modifications && (
+                      <div className="sc-field full">
+                        <label className="sc-label" htmlFor="modificationDetails">Modification Details</label>
+                        <textarea className="sc-textarea" id="modificationDetails" value={formData.modificationDetails} onChange={handleInputChange} placeholder="Describe any modifications made to the vehicle"/>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
-          <div className="mt-8 flex justify-between">
-            {step > 1 && (
-              <button
-                type="button"
-                onClick={prevStep}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                disabled={isSubmitting}
-              >
-                Previous
-              </button>
-            )}
-            {step < 4 && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (validateStep(step)) {
-                    nextStep();
-                  }
-                }}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                disabled={isSubmitting}
-              >
-                Next
-              </button>
-            )}
-            {step === 4 && (
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="animate-spin inline-block mr-2" />
-                    Submitting...
-                  </>
+              {/* STEP 3 */}
+              {step === 3 && (
+                <>
+                  <div className="sc-step-title"><span className="sc-step-badge">3</span> Features & Extras</div>
+                  <div className="sc-grid">
+                    <div className="sc-field">
+                      <label className="sc-label">Extra Features</label>
+                      <div className="sc-check-group">
+                        {[
+                          { key:'gps',           label:'GPS Navigation' },
+                          { key:'sunroof',        label:'Sunroof' },
+                          { key:'leatherSeats',   label:'Leather Seats' },
+                          { key:'backupCamera',   label:'Backup Camera' },
+                        ].map(({ key, label }) => (
+                          <label key={key} className="sc-check-label">
+                            <input type="checkbox" id={`extraFeatures.${key}`} checked={formData.extraFeatures[key]} onChange={handleInputChange}/>
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="sc-field">
+                      <label className="sc-label" htmlFor="certification">Inspection Report <span style={{ textTransform:'none', fontWeight:500, color:'#AAAACC' }}>(Optional)</span></label>
+                      <input className="sc-input" type="file" id="certification" onChange={handleInputChange} accept=".pdf,.jpg,.png"/>
+                    </div>
+                    <div className="sc-field full">
+                      <label className="sc-label" htmlFor="description">Description</label>
+                      <textarea className="sc-textarea" id="description" value={formData.description} onChange={handleInputChange} placeholder="Describe the car's condition, unique features, or recent upgrades…"/>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* STEP 4 */}
+              {step === 4 && (
+                <>
+                  <div className="sc-step-title"><span className="sc-step-badge">4</span> Photo Upload</div>
+                  <label htmlFor="file-upload" style={{ cursor:'pointer', display:'block' }}>
+                    <div className="sc-upload-zone">
+                      <div className="sc-upload-icon"><Camera size={22}/></div>
+                      <div className="sc-upload-text">
+                        <span className="sc-upload-link">Click to upload</span> or drag and drop
+                      </div>
+                      <div className="sc-upload-hint">PNG, JPG, GIF up to 10MB · Max 5 images</div>
+                      <input id="file-upload" name="file-upload" type="file" style={{ display:'none' }}
+                        onChange={handleImageSelect} accept="image/jpeg,image/png,image/gif,image/webp" multiple/>
+                    </div>
+                  </label>
+
+                  {imageUrls.length > 0 && (
+                    <div className="sc-preview-grid">
+                      {imageUrls.map((url, index) => (
+                        <div key={index} className="sc-preview-item">
+                          <img src={url} alt={`Preview ${index+1}`}/>
+                          <button type="button" className="sc-preview-remove" onClick={() => removeImage(index)}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="sc-tips">
+                    <div className="sc-tips-title">Photo Tips</div>
+                    <ul>
+                      <li>Use natural light for better quality</li>
+                      <li>Take photos from multiple angles — front, side, rear, interior</li>
+                      <li>Include close-ups of any special features or damage</li>
+                      <li>Avoid using filters or heavy editing</li>
+                    </ul>
+                  </div>
+                </>
+              )}
+
+              {/* NAV */}
+              <div className="sc-nav">
+                <div className="sc-nav-left">
+                  {step > 1 && (
+                    <button type="button" className="btn-back" onClick={prevStep} disabled={isSubmitting}>
+                      ← Previous
+                    </button>
+                  )}
+                </div>
+                {step < 4 ? (
+                  <button type="button" className="btn-next" onClick={nextStep} disabled={isSubmitting}>
+                    Next <ArrowRight size={15}/>
+                  </button>
                 ) : (
-                  'List My Car'
+                  <button type="submit" className="btn-next" disabled={isSubmitting}>
+                    {isSubmitting
+                      ? <><Loader2 size={15} style={{ animation:'spin 1s linear infinite' }}/> Submitting…</>
+                      : 'List My Car'
+                    }
+                  </button>
                 )}
-              </button>
-            )}
-          </div>
-        </form>
-      </main>
-    </div>
+              </div>
+
+            </div>
+          </form>
+        </div>
+      </div>
+      <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
+    </>
   );
 }
 

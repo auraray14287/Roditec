@@ -1,143 +1,499 @@
-import { useState, useEffect } from 'react';
-import { Globe, Menu, Moon, Sun, X, CircleUserRound } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import ccLogo from './cc.jpg';
-import User from './User';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, ChevronDown, Car, Search, User, LogOut, Shield } from 'lucide-react';
 
-function Navbar() {
-    const [language, setLanguage] = useState("EN");
-    const [location, setLocation] = useState("IN");
-    const [theme, setTheme] = useState("light");
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+const NAV_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-    useEffect(() => {
-        // Check for user ID in localStorage
-        const userId = localStorage.getItem('id');
-        setIsAuthenticated(!!userId); // Set authentication status based on the presence of user ID
-    }, []);
+  .nav-root {
+    font-family: 'Inter', sans-serif;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    background: #fff;
+    border-bottom: 1px solid #E5E7F0;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    transition: box-shadow 0.3s ease;
+  }
+  .nav-root.scrolled {
+    box-shadow: 0 2px 20px rgba(0,0,0,0.10);
+  }
 
-    const toggleTheme = () => {
-        const newTheme = theme === "light" ? "dark" : "light";
-        setTheme(newTheme);
+  .nav-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .nav-logo {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: #1A1A2E;
+    text-decoration: none;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: #3B6BF0;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    list-style: none;
+    margin: 0; padding: 0;
+    flex: 1;
+  }
+
+  .nav-link {
+    font-size: 14px;
+    font-weight: 500;
+    color: #4A4A68;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    transition: all 0.18s ease;
+    position: relative;
+  }
+  .nav-link:hover {
+    color: #3B6BF0;
+    background: #EEF2FF;
+  }
+  .nav-link.active {
+    color: #3B6BF0;
+    font-weight: 600;
+    background: #EEF2FF;
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    border: 1px solid #E5E7F0;
+    background: #F7F8FC;
+    color: #4A4A68;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s ease;
+  }
+  .icon-btn:hover {
+    background: #EEF2FF;
+    border-color: #3B6BF0;
+    color: #3B6BF0;
+  }
+
+  .btn-signin {
+    background: none;
+    border: 1px solid #E5E7F0;
+    color: #4A4A68;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-decoration: none;
+    display: inline-flex; align-items: center;
+  }
+  .btn-signin:hover {
+    border-color: #3B6BF0;
+    color: #3B6BF0;
+  }
+
+  .btn-cta {
+    background: #3B6BF0;
+    color: #fff;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.18s ease;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-cta:hover { background: #2952CC; }
+
+  /* Search overlay */
+  .search-overlay {
+    position: fixed;
+    top: 70px; left: 0; right: 0;
+    background: #fff;
+    border-bottom: 1px solid #E5E7F0;
+    padding: 16px 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all 0.25s ease;
+    z-index: 999;
+  }
+  .search-overlay.open { transform: translateY(0); opacity: 1; }
+
+  .search-input-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .search-icon-pos {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: #8888A8;
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    background: #F7F8FC;
+    border: 1px solid #E5E7F0;
+    border-radius: 10px;
+    padding: 11px 16px 11px 42px;
+    color: #1A1A2E;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: #3B6BF0; background: #fff; box-shadow: 0 0 0 3px rgba(59,107,240,0.1); }
+  .search-input::placeholder { color: #8888A8; }
+
+  /* User menu */
+  .user-menu-wrap { position: relative; }
+
+  .user-avatar-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3B6BF0, #2040C0);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+    border: 2px solid rgba(59,107,240,0.25);
+    transition: box-shadow 0.2s;
+  }
+  .user-avatar-btn:hover { box-shadow: 0 0 0 4px rgba(59,107,240,0.15); }
+
+  .user-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 190px;
+    background: #fff;
+    border: 1px solid #E5E7F0;
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: all 0.18s ease;
+  }
+  .user-dropdown.open { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+  .dropdown-header {
+    padding: 8px 12px 12px;
+    border-bottom: 1px solid #E5E7F0;
+    margin-bottom: 4px;
+  }
+  .dropdown-name { color: #1A1A2E; font-weight: 600; font-size: 14px; }
+  .dropdown-role { color: #8888A8; font-size: 12px; margin-top: 2px; text-transform: capitalize; }
+
+  .dropdown-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    color: #4A4A68;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    border: none;
+    background: none;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+  }
+  .dropdown-item:hover { background: #F7F8FC; color: #1A1A2E; }
+  .dropdown-item.danger:hover { background: #FEF2F2; color: #E63946; }
+  .dropdown-divider { height: 1px; background: #E5E7F0; margin: 4px 0; }
+
+  /* Mobile */
+  .mobile-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 998;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .mobile-overlay.open { opacity: 1; pointer-events: all; }
+
+  .mobile-drawer {
+    position: fixed;
+    top: 0; right: 0;
+    width: min(320px, 100vw);
+    height: 100vh;
+    background: #fff;
+    border-left: 1px solid #E5E7F0;
+    z-index: 999;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+    display: flex; flex-direction: column;
+    padding: 20px;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+  }
+  .mobile-drawer.open { transform: translateX(0); }
+
+  .mobile-drawer-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #E5E7F0;
+  }
+
+  .mobile-nav-link {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0;
+    color: #4A4A68;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px solid #F0F0F8;
+    transition: color 0.18s ease;
+  }
+  .mobile-nav-link:hover, .mobile-nav-link.active { color: #3B6BF0; }
+
+  .topbar {
+    background: #1A1A2E;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    padding: 7px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 100%;
+  }
+  .topbar a { color: rgba(255,255,255,0.6); text-decoration: none; margin-left: 16px; }
+  .topbar a:hover { color: #fff; }
+
+  @media (max-width: 768px) {
+    .desktop-nav { display: none; }
+    .desktop-actions { display: none; }
+    .topbar { display: none; }
+  }
+  @media (min-width: 769px) {
+    .mobile-toggle { display: none; }
+  }
+`;
+
+export default function Navbar() {
+  const [isOpen,       setIsOpen]       = useState(false);
+  const [scrolled,     setScrolled]     = useState(false);
+  const [searchOpen,   setSearchOpen]   = useState(false);
+  const [searchQuery,  setSearchQuery]  = useState('');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const location    = useLocation();
+  const navigate    = useNavigate();
+  const userMenuRef = useRef(null);
+
+  const isLoggedIn = !!localStorage.getItem('name');
+  const userName   = localStorage.getItem('name');
+  const userRole   = localStorage.getItem('role');
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
     };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
+  useEffect(() => { setIsOpen(false); setSearchOpen(false); }, [location]);
 
-    const closeMenu = () => {
-        setIsMenuOpen(false);
-    };
+  const handleLogout = () => { localStorage.clear(); navigate('/login'); };
 
-    useEffect(() => {
-        document.body.className = theme;
-    }, [theme]);
+  const navLinks = [
+    { label: 'Home',      path: '/' },
+    { label: 'Buy a Car', path: '/CarExplore' },
+    { label: 'Rent a Car',path: '/CarExplore' },
+    { label: 'About Us',  path: '/AboutUs' },
+    { label: 'Contact',   path: '/ContactUs' },
+  ];
 
-    return (
-        <div className={`flex flex-col ${theme === 'dark' ? 'dark' : ''}`}>
-            <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-md transition-all duration-300">
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <div className="flex items-center">
-                            <Link to="/" className="flex items-center space-x-2">
-                                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center transition-transform duration-300 hover:scale-110">
-                                    <span className="text-white font-bold text-xl"><img src={ccLogo} alt="CC logo" /></span>
-                                </div>
-                                <span className="font-bold text-xl text-gray-900 dark:text-white transition-colors duration-300">CarConnect</span>
-                            </Link>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            <button
-                                onClick={toggleTheme}
-                                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-300"
-                                aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-                            >
-                                {theme === "light" ? 
-                                    <Moon className="h-5 w-5 text-gray-600 dark:text-gray-300" /> :
-                                    <Sun className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                                }
-                            </button>
-                            <button
-                                onClick={toggleMenu}
-                                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-300"
-                                aria-label="Toggle menu"
-                            >
-                                {isMenuOpen ? 
-                                    <X className="h-6 w-6 text-gray-600 dark:text-gray-300" /> :
-                                    <Menu className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                                }
-                            </button>
+  const isActive = (path) => location.pathname === path;
 
-                            {/* Conditionally render the User component */}
-                            {isAuthenticated && <User />}
-                        </div>
-                    </div>
-                </div>
-            </header>
+  return (
+    <>
+      <style>{NAV_STYLES}</style>
 
-            {/* Sliding Menu */}
-            <div
-                className={`fixed top-0 right-0 w-full sm:w-80 h-full bg-white dark:bg-gray-900 shadow-lg transition-transform transform duration-300 ease-in-out ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
-                style={{ zIndex: 100 }}
-            >
-                <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-                    <Link to="/" className="flex items-center space-x-2" onClick={closeMenu}>
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-xl"><img src={ccLogo} alt="CC logo" /></span>
-                        </div>
-                        <span className="font-bold text-xl text-gray-900 dark:text-white">CarConnect</span>
-                    </Link>
-                    <button
-                        onClick={closeMenu}
-                        className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-300"
-                        aria-label="Close menu"
-                    >
-                        <X className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                    </button>
-                </div>
-
-                <nav className="px-4 pt-6 pb-6 space-y-2">
-                    {[{ to: "/", label: "Home" }, { to: "/#services", label: "Services" }, { to: "/AboutUs", label: "About Us" }, { to: "/ContactUs", label: "Contact Us" }, { to: "/Dashboard", label: "Dashboard" }, { to: "/CarExplore", label: "Explore Cars" }, { to: "/SellCar", label: "Sell Car" }].map((item, index) => (
-                        <Link
-                            key={index}
-                            to={item.to}
-                            className="block py-2 px-4 rounded-lg text-lg font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-300"
-                            onClick={closeMenu}
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
-                </nav>
-
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between mb-4">
-                        <button className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-300">
-                            <Globe className="h-5 w-5" />
-                            <span>{language}</span>
-                        </button>
-                        <button className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-300">
-                            <span>{location}</span>
-                        </button>
-                    </div>
-                    {!isAuthenticated && (
-                        <div className="grid grid-cols-2 gap-4">
-                            <Link to="/Login" className="w-full">
-                                <button className="w-full py-2 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-300 font-medium">
-                                    Sign In
-                                </button>
-                            </Link>
-                            <Link to="/Signup" className="w-full">
-                                <button className="w-full py-2 px-4 rounded-lg bg-black text-white hover:bg-gray-700 transition-colors duration-300 font-medium">
-                                    Get Started
-                                </button>
-                            </Link>
-                        </div>
-                    )}
-                </div>
-            </div>
+      {/* Top bar */}
+      <div className="topbar">
+        <span>📞 +254 700 000 000 &nbsp;|&nbsp; ✉️ info@roditec.co.ke</span>
+        <div>
+          <a href="#">Mon–Fri: 8am–6pm</a>
+          <a href="#">Nairobi, Kenya</a>
         </div>
-    );
-}
+      </div>
 
-export default Navbar;
+      {/* Main nav */}
+      <nav className={`nav-root${scrolled ? ' scrolled' : ''}`}>
+        <div className="nav-inner">
+
+          {/* Logo */}
+          <Link to="/" className="nav-logo">
+            <Car size={20} color="#3B6BF0" />
+            Roditec<span className="logo-dot" />
+          </Link>
+
+          {/* Desktop links */}
+          <ul className="nav-links desktop-nav">
+            {navLinks.map(link => (
+              <li key={link.label}>
+                <Link to={link.path} className={`nav-link${isActive(link.path) ? ' active' : ''}`}>
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* Desktop actions */}
+          <div className="nav-actions desktop-actions">
+            <button className="icon-btn" onClick={() => setSearchOpen(!searchOpen)} title="Search">
+              <Search size={16} />
+            </button>
+
+            {isLoggedIn ? (
+              <div className="user-menu-wrap" ref={userMenuRef}>
+                <button className="user-avatar-btn" onClick={() => setUserMenuOpen(!userMenuOpen)} title={userName}>
+                  {userName?.[0]?.toUpperCase() || 'U'}
+                </button>
+                <div className={`user-dropdown${userMenuOpen ? ' open' : ''}`}>
+                  <div className="dropdown-header">
+                    <div className="dropdown-name">{userName}</div>
+                    <div className="dropdown-role">{userRole || 'member'}</div>
+                  </div>
+                  {userRole === 'admin' && (
+                    <Link to="/AdminDashboard" className="dropdown-item">
+                      <Shield size={14} /> Admin Panel
+                    </Link>
+                  )}
+                  <Link to="/Profile" className="dropdown-item">
+                    <User size={14} /> My Profile
+                  </Link>
+                  <div className="dropdown-divider" />
+                  <button className="dropdown-item danger" onClick={handleLogout}>
+                    <LogOut size={14} /> Sign Out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Link to="/login" className="btn-signin">Sign In</Link>
+                <Link to="/CarExplore" className="btn-cta">Browse Cars</Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile toggle */}
+          <button className="icon-btn mobile-toggle" onClick={() => setIsOpen(!isOpen)}>
+            <Menu size={18} />
+          </button>
+        </div>
+      </nav>
+
+      {/* Search overlay */}
+      <div className={`search-overlay${searchOpen ? ' open' : ''}`} style={{ top: scrolled ? '70px' : '100px' }}>
+        <div className="search-input-wrap">
+          <Search size={16} className="search-icon-pos" />
+          <input
+            className="search-input"
+            placeholder="Search by make, model, year…"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && searchQuery) { navigate(`/CarExplore?q=${searchQuery}`); setSearchOpen(false); }
+              if (e.key === 'Escape') setSearchOpen(false);
+            }}
+            autoFocus={searchOpen}
+          />
+        </div>
+      </div>
+
+      {/* Mobile overlay */}
+      <div className={`mobile-overlay${isOpen ? ' open' : ''}`} onClick={() => setIsOpen(false)} />
+
+      {/* Mobile drawer */}
+      <div className={`mobile-drawer${isOpen ? ' open' : ''}`}>
+        <div className="mobile-drawer-header">
+          <Link to="/" className="nav-logo" style={{ fontSize: 18 }}>
+            <Car size={18} color="#3B6BF0" />
+            Roditec<span className="logo-dot" />
+          </Link>
+          <button className="icon-btn" onClick={() => setIsOpen(false)}>
+            <X size={16} />
+          </button>
+        </div>
+
+        {navLinks.map(link => (
+          <Link key={link.label} to={link.path} className={`mobile-nav-link${isActive(link.path) ? ' active' : ''}`}>
+            {link.label}
+            <ChevronDown size={14} style={{ transform: 'rotate(-90deg)', opacity: 0.4 }} />
+          </Link>
+        ))}
+
+        <div style={{ marginTop: 'auto', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {isLoggedIn ? (
+            <>
+              {userRole === 'admin' && (
+                <Link to="/AdminDashboard" className="btn-cta" style={{ justifyContent: 'center' }}>
+                  <Shield size={14} /> Admin Panel
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                style={{ background: '#FEF2F2', color: '#E63946', border: '1px solid rgba(230,57,70,0.2)', borderRadius: 8, padding: '10px', fontFamily: 'Inter,sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                <LogOut size={14} /> Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="btn-signin" style={{ justifyContent: 'center', textAlign: 'center' }}>Sign In</Link>
+              <Link to="/CarExplore" className="btn-cta" style={{ justifyContent: 'center' }}>Browse Cars</Link>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

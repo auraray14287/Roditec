@@ -1,4 +1,5 @@
 // app.js
+require('dotenv').config();
 require('./db'); // MongoDB connection
 
 const express = require('express');
@@ -28,7 +29,7 @@ app.use('/api', reviewRoutes); // Mount review routes under `/api`
 // Routes
 app.use(require('./api/password-reset'));
 // app.use(require('./api/login'));
-app.use(require('./api/register'));
+app.use('/api/admin', require('./api/register'));
 app.use(require('./api/change-password'));
 app.use(require('./api/update-profile'));
 // app.use(require('./api/carListing'));

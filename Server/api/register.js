@@ -1,56 +1,82 @@
-//api/register.js
 const express = require('express');
-const bcrypt = require('bcrypt');
-const Users = require('../models/Users');
-
 const router = express.Router();
+const bcrypt = require('bcrypt');
+const User = require('../models/Users');
+const Admin = require('../models/Admin');
 
+/**
+ * POST /api/admin/register
+ * Admin-only user registration.
+ * Requires a valid admin-id header.
+ * Public self-registration has been removed from this endpoint.
+ */
 router.post('/register', async (req, res) => {
-  const { name, email, mobileno, password } = req.body;
-
-  if (!name || !email || !mobileno || !password) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
-
   try {
+    // ── Verify admin identity ──────────────────────────────────────────────
+    const adminId = req.headers['admin-id'];
+    if (!adminId) {
+      return res.status(401).json({
+        flag: '0',
+        message: 'Unauthorised. Admin authentication required.'
+      });
+    }
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(403).json({
+        flag: '0',
+        message: 'Forbidden. Invalid admin credentials.'
+      });
+    }
+
+    // ── Validate required fields ───────────────────────────────────────────
+    const { name, email, mobileno, password } = req.body;
+
+    if (!name || !email || !mobileno || !password) {
+      return res.status(400).json({
+        flag: '0',
+        message: 'All fields are required: name, email, mobileno, password.'
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ flag: '0', message: 'Invalid email format.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ flag: '0', message: 'Password must be at least 6 characters.' });
+    }
+
+    // ── Check for duplicate ────────────────────────────────────────────────
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(409).json({ flag: '0', message: 'A user with this email already exists.' });
+    }
+
+    // ── Create user ────────────────────────────────────────────────────────
     const hashedPassword = await bcrypt.hash(password, 10);
-    const users = new Users({
+
+    const newUser = new User({
       name,
       email,
       mobile: mobileno,
       password: hashedPassword,
-      status:'active'
+      status: 'Active',
+      createdAt: new Date(),
     });
 
-    await users.save();
-    res.status(200).json({ message: "Registration successful." });
-  } catch (error) {
-    console.error("Error during registration: ", error);
-    res.status(500).json({ message: "Registration failed. Email might already be in use." });
-  }
-});
+    await newUser.save();
 
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+    return res.status(201).json({
+      flag: '1',
+      message: `User "${name}" registered successfully.`,
+      user: { id: newUser._id, name, email }
+    });
 
-  try {
-    console.log('Login attempt for email:', email);
-    const user = await Users.findOne({ email });
-    
-    if (user) {
-      const passwordMatch = await bcrypt.compare(password, user.password);
-      
-      if (passwordMatch) {
-        user.lastLogin = new Date();
-        await user.save();
-        return res.json({ flag: "1", name: user.name, id: user._id });
-      }
-    }
-    
-    return res.json({ flag: "0", message: "Invalid email or password." });
   } catch (error) {
-    console.error("Login error: ", error);
-    return res.status(500).json({ flag: "0", message: "Database error" });
+    console.error('Admin register error:', error);
+    return res.status(500).json({ flag: '0', message: 'Server error. Please try again.' });
   }
 });
 

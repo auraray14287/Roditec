@@ -1,195 +1,309 @@
-import React, { useEffect, useState } from "react";
-import { Bell, ChevronDown, Search } from "lucide-react";
-import Sidebar from './Sidebar';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { AreaChart, Area } from 'recharts';
-import AdminAuth from './AdminAuth'; // Import the new AdminAuth component
-import { useNavigate } from 'react-router-dom';  // Import useNavigate
+import { useState, useEffect } from 'react';
+import AdminLayout from './AdminLayout';
+import {
+  Car, Users, CreditCard, BookOpen, TrendingUp, TrendingDown,
+  ArrowRight, Clock, Eye
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import API_BASE_URL from '../config/apiConfig';
 
-function AdminDashboard() {
-  // const [Name,setName] = React.useState("");
-  const [listings, setListings] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const navigate = useNavigate();  // Use useNavigate instead of useHistory
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-  function toTitleCase(str) {
-    return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-  }
+  .adash-root { font-family:'Inter',sans-serif; color:#1A1A2E; }
 
-  // Helper function to handle Decimal128 values
-  const convertDecimal128 = (value) => {
-    if (value && value.hasOwnProperty('$numberDecimal')) {
-      return parseFloat(value.$numberDecimal); // Convert Decimal128 to number
-    }
-    return value;
+  .adash-greeting { font-family:'Manrope',sans-serif; font-size:clamp(20px,3vw,28px); font-weight:800; color:#1A1A2E; margin-bottom:4px; }
+  .adash-greeting span { color:#3B6BF0; }
+  .adash-sub { font-size:13px; color:#8888A8; margin-bottom:28px; }
+
+  /* KPI */
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+  .kpi-card { background:#fff; border:1px solid #E5E7F0; border-radius:12px; padding:20px; transition:all .2s; }
+  .kpi-card:hover { box-shadow:0 4px 20px rgba(59,107,240,.1); border-color:rgba(59,107,240,.3); transform:translateY(-2px); }
+  .kpi-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+  .kpi-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .kpi-trend { display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; padding:3px 8px; border-radius:6px; }
+  .kpi-trend.up   { color:#2D9C5A; background:#D1E7DD; }
+  .kpi-trend.down { color:#E63946; background:#F8D7DA; }
+  .kpi-value { font-family:'Manrope',sans-serif; font-weight:800; font-size:28px; color:#1A1A2E; line-height:1; margin-bottom:4px; letter-spacing:-1px; }
+  .kpi-label { font-size:12px; color:#8888A8; font-weight:500; }
+
+  /* QUICK ACTIONS */
+  .qa-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; margin-bottom:24px; }
+  .qa-card { background:#fff; border:1px solid #E5E7F0; border-radius:10px; padding:16px; display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; transition:all .2s; cursor:pointer; }
+  .qa-card:hover { border-color:#3B6BF0; box-shadow:0 4px 16px rgba(59,107,240,.1); transform:translateY(-1px); }
+  .qa-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .18s; }
+  .qa-card:hover .qa-icon { filter:brightness(1.1); }
+  .qa-label { font-size:13px; font-weight:600; color:#1A1A2E; }
+  .qa-sub { font-size:11px; color:#8888A8; margin-top:1px; }
+
+  /* PANEL */
+  .panel-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+  @media(max-width:1100px){ .panel-row { grid-template-columns:1fr; } }
+  .panel { background:#fff; border:1px solid #E5E7F0; border-radius:12px; overflow:hidden; }
+  .panel-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #E5E7F0; }
+  .panel-title { font-family:'Manrope',sans-serif; font-weight:700; font-size:14px; color:#1A1A2E; }
+  .panel-meta { font-size:12px; color:#8888A8; }
+  .panel-link { display:flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:#3B6BF0; text-decoration:none; }
+  .panel-link:hover { text-decoration:underline; }
+
+  /* TABLE */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { padding:10px 16px; text-align:left; font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:#8888A8; background:#F7F8FC; white-space:nowrap; border-bottom:1px solid #E5E7F0; }
+  tbody tr { border-top:1px solid #F0F0F8; transition:background .15s; }
+  tbody tr:hover { background:#F7F8FC; }
+  td { padding:12px 16px; font-size:13px; color:#1A1A2E; white-space:nowrap; }
+  .cell-primary { font-weight:600; color:#1A1A2E; }
+  .cell-muted { font-size:11px; color:#8888A8; margin-top:2px; }
+  .td-empty { text-align:center; padding:40px; color:#8888A8; font-size:13px; }
+
+  .s-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+  .s-pill.active,.s-pill.completed { background:#D1E7DD; color:#0A5C36; }
+  .s-pill.pending { background:#FFF3CD; color:#856404; }
+  .s-pill.confirmed { background:#CFE2FF; color:#084298; }
+  .s-pill.inactive,.s-pill.cancelled { background:#F8D7DA; color:#842029; }
+  .s-pill-dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+  /* BAR CHART */
+  .bar-chart-wrap { padding:20px; }
+  .bar-group { display:flex; align-items:flex-end; gap:5px; height:120px; margin-bottom:8px; }
+  .bar-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+  .bar { width:100%; border-radius:4px 4px 0 0; background:#EEF2FF; border-top:2px solid #C7D7FA; transition:all .4s; }
+  .bar.highlight { background:#BFCFFE; border-color:#3B6BF0; }
+  .bar-lbl { font-size:10px; color:#8888A8; font-weight:500; }
+
+  /* SKELETON */
+  .skeleton { background:linear-gradient(90deg,#f0f2f8 25%,#e6eaf6 50%,#f0f2f8 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:6px; }
+  @keyframes shimmer { from{background-position:200% 0} to{background-position:-200% 0} }
+`;
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+export default function AdminDashboard() {
+  const [stats,          setStats]          = useState(null);
+  const [recentCars,     setRecentCars]     = useState([]);
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const adminName = localStorage.getItem('adminName') || 'Admin';
+
+  const chartData = [42,67,55,80,61,95,78,110,88,102,93,120];
+  const maxChart  = Math.max(...chartData);
+
+  // ── original fetch logic ──
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [carsRes, usersRes, bookingsRes, paymentsRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/listings/listings`).catch(() => ({ json: () => [] })),
+          fetch(`${API_BASE_URL}/api/users/users`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).catch(() => ({ json: () => [] })),
+          fetch(`${API_BASE_URL}/api/bookings/bookings`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).catch(() => ({ json: () => [] })),
+          fetch(`${API_BASE_URL}/api/payments/payments`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).catch(() => ({ json: () => [] })),
+        ]);
+        const [cars, users, bookings, payments] = await Promise.all([
+          carsRes.json().catch(()=>[]),
+          usersRes.json().catch(()=>[]),
+          bookingsRes.json().catch(()=>[]),
+          paymentsRes.json().catch(()=>[]),
+        ]);
+
+        const totalRevenue = (Array.isArray(payments) ? payments : [])
+          .filter(p => p.payment_status === 'Completed')
+          .reduce((sum, p) => sum + parseFloat(p.amount?.$numberDecimal || p.amount || 0), 0);
+
+        setStats({
+          totalCars:       Array.isArray(cars)     ? cars.length     : 0,
+          activeCars:      Array.isArray(cars)     ? cars.filter(c => c.listing_status === 'active').length : 0,
+          totalUsers:      Array.isArray(users)    ? users.length    : 0,
+          totalBookings:   Array.isArray(bookings) ? bookings.length : 0,
+          pendingBookings: Array.isArray(bookings) ? bookings.filter(b => b.booking_status === 'Pending').length : 0,
+          totalRevenue,
+        });
+        setRecentCars(Array.isArray(cars)     ? cars.slice(0,5)     : []);
+        setRecentBookings(Array.isArray(bookings) ? bookings.slice(0,5) : []);
+      } catch (e) {
+        console.error(e);
+        setStats({ totalCars:0, activeCars:0, totalUsers:0, totalBookings:0, pendingBookings:0, totalRevenue:0 });
+      } finally { setLoading(false); }
+    };
+    fetchData();
+  }, []);
+
+  // KSH revenue — fixed formatting
+  const fmtRevenue = (v) => {
+    if (v >= 1_000_000) return `KSH ${(v/1_000_000).toFixed(1)}M`;
+    if (v >= 1_000)     return `KSH ${Math.round(v/1_000)}K`;
+    return `KSH ${Math.round(v).toLocaleString()}`;
   };
 
-  useEffect(() => {
-    // Fetch New Listings (Car Listings)
-    fetch(`${API_BASE_URL}/api/listings/listings`)
-      .then((response) => response.json())
-      .then((data) => {
-        // Convert any Decimal128 values to regular numbers or strings
-        const formattedListings = data.slice(0, 5).map(listing => ({
-          ...listing,
-          price: convertDecimal128(listing.price),
-        }));
-        setListings(formattedListings);
-      })
-      .catch((error) => {
-        console.error("Error fetching listings:", error);
-      });
-
-    // Fetch Recent Transactions
-    fetch(`${API_BASE_URL}/payments`)
-      .then((response) => response.json())
-      .then((data) => {
-        // Convert any Decimal128 values to regular numbers or strings
-        const formattedTransactions = data.slice(0, 5).map(transaction => ({
-          ...transaction,
-          amount: convertDecimal128(transaction.amount),
-        }));
-        setTransactions(formattedTransactions);
-      })
-      .catch((error) => {
-        console.error("Error fetching transactions:", error);
-      });
-  }, []); // Empty dependency array means this runs once when the component mounts
-
-  // Manual data for the charts
-  const revenueData = [
-    { name: 'Jan', revenue: 4000 },
-    { name: 'Feb', revenue: 3000 },
-    { name: 'Mar', revenue: 5000 },
-    { name: 'Apr', revenue: 6000 },
-    { name: 'May', revenue: 7000 },
+  const KPI_CARDS = [
+    { label:'Total Listings',  value: stats?.totalCars      ?? '—', icon:Car,      color:'#3B6BF0', bg:'#EEF2FF', trend:'+12%', up:true  },
+    { label:'Active Listings', value: stats?.activeCars     ?? '—', icon:Eye,      color:'#2D9C5A', bg:'#D1E7DD', trend:'+8%',  up:true  },
+    { label:'Total Users',     value: stats?.totalUsers     ?? '—', icon:Users,    color:'#0A6EBD', bg:'#CFE2FF', trend:'+21%', up:true  },
+    { label:'Total Revenue',   value: stats ? fmtRevenue(stats.totalRevenue) : '—', icon:CreditCard, color:'#6F42C1', bg:'#E8D5FF', trend:'+15%', up:true },
+    { label:'Bookings',        value: stats?.totalBookings  ?? '—', icon:BookOpen, color:'#B25E09', bg:'#FFE5D0', trend:'+6%',  up:true  },
+    { label:'Pending',         value: stats?.pendingBookings?? '—', icon:Clock,    color:'#856404', bg:'#FFF3CD', trend:'-3%',  up:false },
   ];
 
-  const activityData = [
-    { name: 'Week 1', activity: 30 },
-    { name: 'Week 2', activity: 40 },
-    { name: 'Week 3', activity: 35 },
-    { name: 'Week 4', activity: 50 },
-    { name: 'Week 5', activity: 45 },
-  ];
+  const statusClass = (s) => {
+    if (!s) return 'pending';
+    const v = s.toLowerCase();
+    if (v==='active'||v==='completed') return 'active';
+    if (v==='confirmed') return 'confirmed';
+    if (v==='cancelled'||v==='inactive') return 'inactive';
+    return 'pending';
+  };
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Main Content */}
-      {/* <AdminAuth setName={setName} /> Include AdminAuth to handle the authentication */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar />
+    <AdminLayout pageTitle="Dashboard">
+      <style>{STYLES}</style>
+      <div className="adash-root">
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-auto p-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Revenue Graph */}
-            <div className="rounded-lg border bg-white p-4 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold">Revenue Graph</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#8884d8" />
-                </LineChart>
-              </ResponsiveContainer>
+        <div className="adash-greeting">Good day, <span>{adminName}</span> 👋</div>
+        <div className="adash-sub">Here's what's happening with Roditec today.</div>
+
+        {/* KPI */}
+        <div className="kpi-grid">
+          {KPI_CARDS.map(card => (
+            <div key={card.label} className="kpi-card">
+              <div className="kpi-top">
+                <div className="kpi-icon" style={{ background:card.bg, color:card.color }}>
+                  <card.icon size={19}/>
+                </div>
+                <div className={`kpi-trend ${card.up?'up':'down'}`}>
+                  {card.up ? <TrendingUp size={11}/> : <TrendingDown size={11}/>}
+                  {card.trend}
+                </div>
+              </div>
+              {loading
+                ? <div className="skeleton" style={{ height:28, width:'60%', marginBottom:4 }}/>
+                : <div className="kpi-value">{card.value}</div>
+              }
+              <div className="kpi-label">{card.label}</div>
             </div>
+          ))}
+        </div>
 
-            {/* Activity Chart */}
-            <div className="rounded-lg border bg-white p-4 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold">Activity Chart</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={activityData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Area type="monotone" dataKey="activity" stroke="#82ca9d" fill="#82ca9d" />
-                </AreaChart>
-              </ResponsiveContainer>
+        {/* QUICK ACTIONS */}
+        <div className="qa-grid">
+          {[
+            { label:'Add Listing',   sub:'Post a new car',   path:'/CarManagement',     icon:Car,       color:'#3B6BF0', bg:'#EEF2FF' },
+            { label:'Add User',      sub:'Register a user',  path:'/UserManagement',    icon:Users,     color:'#2D9C5A', bg:'#D1E7DD' },
+            { label:'View Bookings', sub:'Manage bookings',  path:'/BookingManagement', icon:BookOpen,  color:'#B25E09', bg:'#FFE5D0' },
+            { label:'Payments',      sub:'Track payments',   path:'/PaymentManagement', icon:CreditCard,color:'#6F42C1', bg:'#E8D5FF' },
+          ].map(a => (
+            <Link key={a.path} to={a.path} className="qa-card">
+              <div className="qa-icon" style={{ background:a.bg, color:a.color }}><a.icon size={16}/></div>
+              <div><div className="qa-label">{a.label}</div><div className="qa-sub">{a.sub}</div></div>
+            </Link>
+          ))}
+        </div>
+
+        {/* PANELS */}
+        <div className="panel-row">
+          {/* Revenue Chart */}
+          <div className="panel">
+            <div className="panel-header">
+              <div className="panel-title">Revenue Overview</div>
+              <span className="panel-meta">Last 12 months</span>
             </div>
-
-            {/* New Listings Table */}
-            <div className="rounded-lg border bg-white p-4 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold">New Listings Table</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {listings.map((listing) => (
-                      <tr key={listing.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{listing.make} {listing.model}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{listing.carType}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{listing.listing_status}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{listing.price}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="bar-chart-wrap">
+              <div className="bar-group">
+                {chartData.map((val,i) => (
+                  <div key={i} className="bar-item">
+                    <div className={`bar${i===chartData.length-1?' highlight':''}`} style={{ height:`${(val/maxChart)*100}%` }}/>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display:'flex', gap:5 }}>
+                {MONTHS.map((m,i) => <div key={i} className="bar-lbl" style={{ flex:1, textAlign:'center' }}>{m}</div>)}
               </div>
             </div>
-
-            {/* Recent Transactions Table */}
-            <div className="rounded-lg border bg-white p-4 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold">Recent Transactions</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {transactions.map((transaction) => (
-                      <tr key={transaction.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.transaction_id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.user_id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.amount}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.payment_method}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.date_of_payment}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
           </div>
-          <button onClick={() => { navigate('/ReportDesign'); }}
-            style={{
-              padding: '14px 20px',
-              fontSize: '18px',
-              fontWeight: 'bold',
-              backgroundColor: 'black',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-            }}
-          >
-            Generate Report
-          </button>
-        </main>
+
+          {/* Recent Bookings */}
+          <div className="panel">
+            <div className="panel-header">
+              <div className="panel-title">Recent Bookings</div>
+              <Link to="/BookingManagement" className="panel-link">View All <ArrowRight size={12}/></Link>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Customer</th><th>Status</th><th>Amount</th></tr></thead>
+                <tbody>
+                  {loading ? Array.from({length:4}).map((_,i) => (
+                    <tr key={i}>
+                      <td><div className="skeleton" style={{ height:13, width:110 }}/></td>
+                      <td><div className="skeleton" style={{ height:20, width:70, borderRadius:20 }}/></td>
+                      <td><div className="skeleton" style={{ height:13, width:80 }}/></td>
+                    </tr>
+                  )) : recentBookings.length===0 ? (
+                    <tr><td colSpan={3} className="td-empty">No bookings yet</td></tr>
+                  ) : recentBookings.map((b,i) => (
+                    <tr key={i}>
+                      <td>
+                        <div className="cell-primary">{b.user_name||b.user_id||'Customer'}</div>
+                        <div className="cell-muted">{b.car_make} {b.car_model}</div>
+                      </td>
+                      <td>
+                        <span className={`s-pill ${statusClass(b.booking_status)}`}>
+                          <span className="s-pill-dot"/>{b.booking_status||'Pending'}
+                        </span>
+                      </td>
+                      <td style={{ color:'#3B6BF0', fontWeight:600 }}>
+                        KSH {parseFloat(b.total_amount?.$numberDecimal||b.total_amount||0).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Listings */}
+        <div className="panel">
+          <div className="panel-header">
+            <div className="panel-title">Recent Listings</div>
+            <Link to="/CarManagement" className="panel-link">Manage All <ArrowRight size={12}/></Link>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Vehicle</th><th>Type</th><th>Price</th><th>Status</th></tr></thead>
+              <tbody>
+                {loading ? Array.from({length:5}).map((_,i) => (
+                  <tr key={i}>
+                    <td><div className="skeleton" style={{ height:13, width:130 }}/></td>
+                    <td><div className="skeleton" style={{ height:13, width:55 }}/></td>
+                    <td><div className="skeleton" style={{ height:13, width:90 }}/></td>
+                    <td><div className="skeleton" style={{ height:20, width:65, borderRadius:20 }}/></td>
+                  </tr>
+                )) : recentCars.length===0 ? (
+                  <tr><td colSpan={4} className="td-empty">No listings yet</td></tr>
+                ) : recentCars.map((car,i) => {
+                  const price = car.price?.$numberDecimal ? parseFloat(car.price.$numberDecimal) : (car.price||0);
+                  return (
+                    <tr key={i}>
+                      <td>
+                        <div className="cell-primary">{car.year} {car.make} {car.model}</div>
+                        <div className="cell-muted">{car.carType}</div>
+                      </td>
+                      <td style={{ color:'#8888A8', fontWeight:500 }}>{car.RentSell}</td>
+                      <td style={{ color:'#3B6BF0', fontWeight:600 }}>KSH {price.toLocaleString()}</td>
+                      <td>
+                        <span className={`s-pill ${statusClass(car.listing_status)}`}>
+                          <span className="s-pill-dot"/>{car.listing_status||'Active'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
-    </div>
+    </AdminLayout>
   );
 }
-
-export default AdminAuth(AdminDashboard);

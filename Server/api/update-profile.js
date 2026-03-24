@@ -1,10 +1,29 @@
-//api/update-profile.js
 const express = require('express');
 const Users = require('../models/Users');
 
 const router = express.Router();
 
-// update-profile.js
+// ---------------------------------------------------------------
+// Step 6.22 — Get user profile by ID (used by SellCar.jsx to
+// verify posting permission). Returns role & canPostListings.
+// ---------------------------------------------------------------
+router.get('/api/users/profile/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await Users.findById(id, 'name email mobile role canPostListings status');
+    if (user) {
+      return res.json(user);
+    } else {
+      return res.status(404).json({ flag: "0", message: "User not found." });
+    }
+  } catch (error) {
+    console.error("Error fetching user profile: ", error);
+    return res.status(500).json({ flag: "0", message: "Database error" });
+  }
+});
+
+// Existing: get profile by query param (used by Profile.jsx)
 router.get('/get-profile', async (req, res) => {
   const { id } = req.query;
 
@@ -25,7 +44,7 @@ router.get('/get-profile', async (req, res) => {
   }
 });
 
-
+// Existing: update profile
 router.post('/update-profile', async (req, res) => {
   const { id, name, email, mobile } = req.body;
 
@@ -51,6 +70,7 @@ router.post('/update-profile', async (req, res) => {
   }
 });
 
+// Existing: get all users (used by UserManagement.jsx)
 router.get('/get-users', async (req, res) => {
   try {
     const users = await Users.find({}, 'name email mobile role status lastLogin');
@@ -61,6 +81,7 @@ router.get('/get-users', async (req, res) => {
   }
 });
 
+// Existing: suspend user
 router.post('/suspend-user', async (req, res) => {
   const { id } = req.body;
   try {
@@ -77,6 +98,5 @@ router.post('/suspend-user', async (req, res) => {
     res.status(500).json({ message: 'Failed to suspend user.' });
   }
 });
-
 
 module.exports = router;

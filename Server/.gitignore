@@ -1,2 +1,17 @@
-node_modules/
+# Environment variables - NEVER commit these
 .env
+
+# Dependencies
+node_modules/
+
+# Uploaded car images
+uploads/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db

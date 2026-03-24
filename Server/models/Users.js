@@ -1,22 +1,3 @@
-// // models/Users.js
-// const mongoose = require('mongoose');
-// const Schema = mongoose.Schema;
-
-// const UserDataSchema = new Schema({
-//   user_id: { type: Number, required: true },
-//   name: { type: String, required: true },
-//   email: { type: String, unique: true, required: true },
-//   mobile: { type: String, required: true },
-//   password: { type: String, required: true },
-//   status: { type: String, required: true },
-//   createdAt: { type: Date, default: Date.now }, // Automatically set the creation date
-//   lastLogin: { type: Date } // Will be updated on each login
-// });
-
-// const Users = mongoose.model('Users', UserDataSchema);
-
-// module.exports = Users;
-
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
@@ -27,7 +8,7 @@ function generateUniqueUserId() {
 
 const UserDataSchema = new Schema({
   user_id: { 
-    type: String,  // Changed to String for more flexibility
+    type: String,
     unique: true, 
     required: true,
     default: generateUniqueUserId,
@@ -39,7 +20,19 @@ const UserDataSchema = new Schema({
   password: { type: String, required: true },
   status: { type: String, default: 'active', required: true },
   createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date }
+  lastLogin: { type: Date },
+  // ---------------------------------------------------------------
+  // Step 6.13 — Role-based access control
+  // 'user'   → can browse, rent, buy only (default)
+  // 'poster' → admin-granted; can post/edit/delete listings
+  // 'admin'  → full access (handled separately via Admin model)
+  // ---------------------------------------------------------------
+  role: { 
+    type: String, 
+    enum: ['user', 'poster', 'admin'], 
+    default: 'user' 
+  },
+  canPostListings: { type: Boolean, default: false }
 }, {
   timestamps: true
 });
@@ -49,10 +42,7 @@ UserDataSchema.pre('save', async function(next) {
   if (this.isNew && !this.user_id) {
     while (true) {
       const generatedId = generateUniqueUserId();
-      
-      // Check if this user_id already exists
       const existingUser = await this.constructor.findOne({ user_id: generatedId });
-      
       if (!existingUser) {
         this.user_id = generatedId;
         break;
