@@ -1,1030 +1,425 @@
-// import { useState, useEffect } from 'react';
-// import { ArrowLeft, ArrowRight, ChevronRight, Facebook, Heart, Share2, Twitter, CheckCircle } from 'lucide-react';
-// import { Link, useParams } from 'react-router-dom';
-
-// export default function BuyCarDetails() {
-//   const { id } = useParams();
-//   const [car, setCar] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-//   const [isWishlisted, setIsWishlisted] = useState(false);
-//   const [downPayment, setDownPayment] = useState(5000);
-//   const [loanTerm, setLoanTerm] = useState(60);
-//   const [interestRate, setInterestRate] = useState(3.5);
-
-//   useEffect(() => {
-//     const fetchCarDetails = async () => {
-//       try {
-//         const response = await fetch(`${API_BASE_URL}/api/listings/listings/${id}`);
-//         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-//         const data = await response.json();
-//         if (!data) throw new Error('No data received');
-
-//         const transformedCar = {
-//           id: data.listing_id,
-//           make: data.make || 'NA',
-//           model: data.model || 'NA',
-//           year: data.year || new Date().getFullYear(),
-//           price: data.price?.$numberDecimal ? parseFloat(data.price.$numberDecimal) : 0,
-//           mileage: data.mileage || 0,
-//           carType: data.carType || 'NA',
-//           images: data.images && data.images.length > 0
-//             ? data.images.map(image => `${API_BASE_URL}${image.url}`)
-//             : ['/placeholder-car-image.jpg'],
-//           engine: data.engine || 'NA',
-//           transmission: data.transmission || 'NA',
-//           fuelType: data.fuelType || 'NA',
-//           seatingCapacity: data.seatingCapacity || 'NA',
-//           exteriorColor: data.exteriorColor || 'NA',
-//           interiorColor: data.interiorColor || 'NA',
-//           vin: data.vin || 'NA'
-//         };
-
-//         setCar(transformedCar);
-//         setLoading(false);
-//       } catch (err) {
-//         setError(err.message);
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchCarDetails();
-
-//     if (id) {
-//       sessionStorage.setItem('currentListingId', id);
-//     }
-//   }, [id]);
-
-//   const calculateMonthlyPayment = () => {
-//     if (!car) return '0';
-//     const principal = car.price - downPayment;
-//     const monthlyRate = interestRate / 100 / 12;
-//     const numberOfPayments = loanTerm;
-//     const monthlyPayment = (principal * monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
-//       (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-//     return monthlyPayment.toFixed(2);
-//   };
-
-//   const testnotify = () => {
-//     alert("Thank you for scheduling a test drive. We will contact you soon.");
-//   };
-
-//   const taxRate = 0.08;
-//   const registrationFee = 300;
-
-//   if (loading) return (
-//     <div className="flex justify-center items-center min-h-screen">
-//       <p>Loading car details...</p>
-//     </div>
-//   );
-
-//   if (error) return (
-//     <div className="flex justify-center items-center min-h-screen text-red-500">
-//       <p>Error: {error}</p>
-//     </div>
-//   );
-
-//   if (!car) return (
-//     <div className="flex justify-center items-center min-h-screen">
-//       <p>Car not found</p>
-//     </div>
-//   );
-
-//   const totalCost = car.price + (car.price * taxRate) + registrationFee;
-
-//   return (
-//     // <div className="min-h-screen bg-gray-100">
-//     //   <header className="bg-white shadow">
-//     //     <div className="container mx-auto px-4 py-6">
-//     //       <nav className="text-sm breadcrumbs">
-//     //         <ul className="flex items-center space-x-2">
-//     //           <li><Link to="/" className="text-gray-500 hover:text-gray-700">Home</Link></li>
-//     //           <ChevronRight className="w-4 h-4 text-gray-500" />
-//     //           <li><Link to="/buy-car" className="text-gray-500 hover:text-gray-700">Buy Car</Link></li>
-//     //           <ChevronRight className="w-4 h-4 text-gray-500" />
-//     //           <li><span className="text-gray-500">{car.make}</span></li>
-//     //           <ChevronRight className="w-4 h-4 text-gray-500" />
-//     //           <li className="text-gray-900 font-medium">{car.model}</li>
-//     //         </ul>
-//     //       </nav>
-//     //       <h1 className="text-3xl font-bold text-gray-800 mt-4">
-//     //         {car.year} {car.make} {car.model}
-//     //       </h1>
-//     //     </div>
-//     //   </header>
-
-//     //   <main className="container mx-auto px-4 py-8">
-//     //     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//     //       <div className="lg:col-span-2">
-//     //         <div className="relative flex items-center justify-center rounded-lg shadow-lg overflow-hidden h-96 bg-gray-200">
-//     //           <img
-//     //             src={car.images[currentImageIndex]}
-//     //             alt={`${car.make} ${car.model}`}
-//     //             className="object-cover w-full h-full"
-//     //             style={{ minWidth: "100%", objectFit: "cover" }}
-//     //             onError={(e) => {
-//     //               e.target.src = '/placeholder-car-image.jpg';
-//     //             }}
-//     //           />
-//     //           {car.images.length > 1 && (
-//     //             <>
-//     //               <button
-//     //                 onClick={() => setCurrentImageIndex((prev) => (prev - 1 + car.images.length) % car.images.length)}
-//     //                 className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full"
-//     //               >
-//     //                 <ArrowLeft className="w-6 h-6" />
-//     //               </button>
-//     //               <button
-//     //                 onClick={() => setCurrentImageIndex((prev) => (prev + 1) % car.images.length)}
-//     //                 className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full"
-//     //               >
-//     //                 <ArrowRight className="w-6 h-6" />
-//     //               </button>
-//     //             </>
-//     //           )}
-//     //         </div>
-
-//     //         <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-//     //           <h2 className="text-2xl font-semibold mb-4">Vehicle Specifications</h2>
-//     //           <div className="grid grid-cols-2 gap-4">
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Make</h3>
-//     //               <p>{car.make}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Model</h3>
-//     //               <p>{car.model}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Year</h3>
-//     //               <p>{car.year}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Mileage</h3>
-//     //               <p>{car.mileage.toLocaleString()} miles</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Engine</h3>
-//     //               <p>{car.engine}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Transmission</h3>
-//     //               <p>{car.transmission}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Fuel Type</h3>
-//     //               <p>{car.fuelType}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Seating Capacity</h3>
-//     //               <p>{car.seatingCapacity} passengers</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Exterior Color</h3>
-//     //               <p>{car.exteriorColor}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Interior Color</h3>
-//     //               <p>{car.interiorColor}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Car Type</h3>
-//     //               <p>{car.carType}</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">VIN</h3>
-//     //               <p>{car.vin}</p>
-//     //             </div>
-//     //           </div>
-//     //         </div>
-
-//     //         <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-//     //           <h2 className="text-2xl font-semibold mb-4">Condition Summary</h2>
-//     //           <div className="flex items-center mb-4">
-//     //             <CheckCircle className="w-6 h-6 text-green-500 mr-2" />
-//     //             <span className="font-medium">Certified Pre-Owned</span>
-//     //           </div>
-//     //           <p className="text-gray-700 mb-4">
-//     //             This vehicle has undergone a rigorous inspection and reconditioning process.
-//     //             It is in excellent condition and comes with an extended warranty.
-//     //           </p>
-//     //           <ul className="list-disc list-inside text-gray-700">
-//     //             <li>Regular maintenance up to date</li>
-//     //             <li>No accident history reported</li>
-//     //             <li>New tires installed recently</li>
-//     //             <li>Minor wear on driver's seat (see images)</li>
-//     //             <li>Small paint touch-up on rear bumper</li>
-//     //           </ul>
-//     //         </div>
-
-//     //         <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-//     //           <h2 className="text-2xl font-semibold mb-4">Vehicle History</h2>
-//     //           <div className="space-y-4">
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Ownership History</h3>
-//     //               <p>1 previous owner (lease vehicle)</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Accident History</h3>
-//     //               <p>No accidents or damage reported</p>
-//     //             </div>
-//     //             <div>
-//     //               <h3 className="font-medium text-gray-600">Service Records</h3>
-//     //               <ul className="list-disc list-inside text-gray-700">
-//     //                 <li>Regular oil changes and tire rotations</li>
-//     //                 <li>30,000-mile service completed</li>
-//     //                 <li>Brake pads replaced at 25,000 miles</li>
-//     //               </ul>
-//     //             </div>
-//     //           </div>
-//     //         </div>
-//     //       </div>
-
-//     //       <div className="lg:col-span-1">
-//     //         <div className="bg-white rounded-lg shadow-lg p-6 mb-6 sticky top-4">
-//     //           <div className="flex justify-between items-center mb-4">
-//     //             <h2 className="text-3xl font-bold">₹{car.price.toLocaleString()}</h2>
-//     //             <button
-//     //               onClick={() => setIsWishlisted(!isWishlisted)}
-//     //               className={`${isWishlisted ? 'text-red-500' : 'text-gray-400'} hover:text-red-600`}
-//     //             >
-//     //               <Heart className="w-6 h-6" fill={isWishlisted ? 'currentColor' : 'none'} />
-//     //             </button>
-//     //           </div>
-//     //           <p className="text-gray-600 mb-4">
-//     //             Starting at ₹{calculateMonthlyPayment()}/month with ₹{downPayment.toLocaleString()} down for {loanTerm} months
-//     //           </p>
-//     //           <div className="space-y-4">
-//     //             <Link to={`/payment/${car.id}`}>
-//     //               <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300 font-semibold">
-//     //                 Proceed to Payment
-//     //               </button>
-//     //             </Link>
-//     //             <Link to="/contact-us">
-//     //               <button className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-300 font-semibold">
-//     //                 Contact Us
-//     //               </button>
-//     //             </Link>
-//     //           </div>
-//     //           <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
-//     //             <span>Share this car:</span>
-//     //             <div className="flex space-x-2">
-//     //               <button className="hover:text-blue-600">
-//     //                 <Facebook className="w-5 h-5" />
-//     //               </button>
-//     //               <button className="hover:text-blue-400">
-//     //                 <Twitter className="w-5 h-5" />
-//     //               </button>
-//     //               <button className="hover:text-green-600">
-//     //                 <Share2 className="w-5 h-5" />
-//     //               </button>
-//     //             </div>
-//     //           </div>
-//     //         </div>
-
-//     //         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-//     //           <h3 className="text-lg font-semibold mb-4">Pricing Breakdown</h3>
-//     //           <div className="space-y-2">
-//     //             <div className="flex justify-between">
-//     //               <span className="text-gray-600">Base Price:</span>
-//     //               <span>₹{car.price.toLocaleString()}</span>
-//     //             </div>
-//     //             <div className="flex justify-between">
-//     //               <span className="text-gray-600">Taxes (8%):</span>
-//     //               <span>₹{(car.price * taxRate).toLocaleString()}</span>
-//     //             </div>
-//     //             <div className="flex justify-between">
-//     //               <span className="text-gray-600">Registration Fee:</span>
-//     //               <span>₹{registrationFee}</span>
-//     //             </div>
-//     //             <div className="flex justify-between font-semibold">
-//     //               <span className="text-gray-600">Total:</span>
-//     //               <span>₹{totalCost.toLocaleString()}</span>
-//     //             </div>
-//     //           </div>
-//     //         </div>
-
-//     //         <div className="bg-white rounded-lg shadow-lg p-6">
-//     //           <h3 className="text-lg font-semibold mb-4">Schedule a Test Drive</h3>
-//     //           <form>
-//     //             <div className="space-y-4">
-//     //               <div>
-//     //                 <label htmlFor="test-drive-date" className="block text-sm font-medium text-gray-700">
-//     //                   Preferred Date
-//     //                 </label>
-//     //                 <input
-//     //                   type="date"
-//     //                   id="test-drive-date"
-//     //                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-//     //                 />
-//     //               </div>
-//     //               <div>
-//     //                 <label htmlFor="test-drive-time" className="block text-sm font-medium text-gray-700">Preferred Time</label>
-//     //                 <select id="test-drive-time" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-//     //                   <option>Morning (9AM - 12PM)</option>
-//     //                   <option>Afternoon (12PM - 4PM)</option>
-//     //                   <option>Evening (4PM - 7PM)</option>
-//     //                 </select>
-//     //               </div>
-//     //             </div>
-//     //             <button type="button" className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 font-semibold" onClick={testnotify}>
-//     //               Schedule Test Drive
-//     //             </button>
-//     //           </form>
-//     //         </div>
-//     //       </div>
-//     //     </div>
-//     //   </main>
-//     // </div>
-//     <div className="min-h-screen bg-gray-100">
-//     <header className="bg-white shadow">
-//       <div className="container mx-auto px-4 py-6">
-//         <nav className="text-sm breadcrumbs">
-//           <ul className="flex items-center space-x-2">
-//             <li><Link to="/" className="text-gray-500 hover:text-gray-700">Home</Link></li>
-//             <ChevronRight className="w-4 h-4 text-gray-500" />
-//             <li><Link to="/buy-car" className="text-gray-500 hover:text-gray-700">Buy Car</Link></li>
-//             <ChevronRight className="w-4 h-4 text-gray-500" />
-//             <li><span className="text-gray-500">{car.make}</span></li>
-//             <ChevronRight className="w-4 h-4 text-gray-500" />
-//             <li className="text-gray-900 font-medium">{car.model}</li>
-//           </ul>
-//         </nav>
-//         <h1 className="text-3xl font-bold text-gray-800 mt-4">
-//           {car.year} {car.make} {car.model}
-//         </h1>
-//       </div>
-//     </header>
-
-//     <main className="container mx-auto px-4 py-8">
-//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-//         <div className="lg:col-span-2">
-//           <div className="relative flex items-center justify-center rounded-lg shadow-lg overflow-hidden h-96 bg-gray-200">
-//             <img
-//               src={car.images[currentImageIndex]}
-//               alt={`${car.make} ${car.model}`}
-//               className="object-cover w-full h-full"
-//               style={{ minWidth: "100%", objectFit: "cover" }}
-//               onError={(e) => {
-//                 e.target.src = '/placeholder-car-image.jpg';
-//               }}
-//             />
-//             {car.images.length > 1 && (
-//               <>
-//                 <button
-//                   onClick={() => setCurrentImageIndex((prev) => (prev - 1 + car.images.length) % car.images.length)}
-//                   className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full"
-//                 >
-//                   <ArrowLeft className="w-6 h-6" />
-//                 </button>
-//                 <button
-//                   onClick={() => setCurrentImageIndex((prev) => (prev + 1) % car.images.length)}
-//                   className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full"
-//                 >
-//                   <ArrowRight className="w-6 h-6" />
-//                 </button>
-//               </>
-//             )}
-//           </div>
-
-//           <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-//             <h2 className="text-2xl font-semibold mb-4">Vehicle Specifications</h2>
-//             <div className="grid grid-cols-2 gap-4">
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Make</h3>
-//                 <p>{car.make}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Model</h3>
-//                 <p>{car.model}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Year</h3>
-//                 <p>{car.year}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Mileage</h3>
-//                 <p>{car.mileage.toLocaleString()} miles</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Engine</h3>
-//                 <p>{car.engine}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Transmission</h3>
-//                 <p>{car.transmission}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Fuel Type</h3>
-//                 <p>{car.fuelType}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Seating Capacity</h3>
-//                 <p>{car.seatingCapacity} passengers</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Exterior Color</h3>
-//                 <p>{car.exteriorColor}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Interior Color</h3>
-//                 <p>{car.interiorColor}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Car Type</h3>
-//                 <p>{car.carType}</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">VIN</h3>
-//                 <p>{car.vin}</p>
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-//             <h2 className="text-2xl font-semibold mb-4">Condition Summary</h2>
-//             <div className="flex items-center mb-4">
-//               <CheckCircle className="w-6 h-6 text-green-500 mr-2" />
-//               <span className="font-medium">Certified Pre-Owned</span>
-//             </div>
-//             <p className="text-gray-700 mb-4">
-//               This vehicle has undergone a rigorous inspection and reconditioning process.
-//               It is in excellent condition and comes with an extended warranty.
-//             </p>
-//             <ul className="list-disc list-inside text-gray-700">
-//               <li>Regular maintenance up to date</li>
-//               <li>No accident history reported</li>
-//               <li>New tires installed recently</li>
-//               <li>Minor wear on driver's seat (see images)</li>
-//               <li>Small paint touch-up on rear bumper</li>
-//             </ul>
-//           </div>
-
-//           <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-//             <h2 className="text-2xl font-semibold mb-4">Vehicle History</h2>
-//             <div className="space-y-4">
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Ownership History</h3>
-//                 <p>1 previous owner (lease vehicle)</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Accident History</h3>
-//                 <p>No accidents or damage reported</p>
-//               </div>
-//               <div>
-//                 <h3 className="font-medium text-gray-600">Service Records</h3>
-//                 <ul className="list-disc list-inside text-gray-700">
-//                   <li>Regular oil changes and tire rotations</li>
-//                   <li>30,000-mile service completed</li>
-//                   <li>Brake pads replaced at 25,000 miles</li>
-//                 </ul>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         <div className="lg:col-span-1">
-//           <div className="bg-white rounded-lg shadow-lg p-6 mb-6 sticky top-4">
-//             <div className="flex justify-between items-center mb-4">
-//               <h2 className="text-3xl font-bold">₹{car.price.toLocaleString()}</h2>
-//               <button
-//                 onClick={() => setIsWishlisted(!isWishlisted)}
-//                 className={`${isWishlisted ? 'text-red-500' : 'text-gray-400'} hover:text-red-600`}
-//               >
-//                 <Heart className="w-6 h-6" fill={isWishlisted ? 'currentColor' : 'none'} />
-//               </button>
-//             </div>
-//             <p className="text-gray-600 mb-4">
-//               Starting at ₹{calculateMonthlyPayment()}/month with ₹{downPayment.toLocaleString()} down for {loanTerm} months
-//             </p>
-//             <div className="space-y-4">
-//               <Link to={`/payment/${car.id}`}>
-//                 <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300 font-semibold">
-//                   Proceed to Payment
-//                 </button>
-//               </Link>
-//               <Link to="/contact-us">
-//                 <button className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition duration-300 font-semibold">
-//                   Contact Us
-//                 </button>
-//               </Link>
-//             </div>
-//             <div className="mt-4 flex justify-between items-center text-sm text-gray-600">
-//               <span>Share this car:</span>
-//               <div className="flex space-x-2">
-//                 <button className="hover:text-blue-600">
-//                   <Facebook className="w-5 h-5" />
-//                 </button>
-//                 <button className="hover:text-blue-400">
-//                   <Twitter className="w-5 h-5" />
-//                 </button>
-//                 <button className="hover:text-green-600">
-//                   <Share2 className="w-5 h-5" />
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-//             <h3 className="text-lg font-semibold mb-4">Pricing Breakdown</h3>
-//             <div className="space-y-2">
-//               <div className="flex justify-between">
-//                 <span className="text-gray-600">Base Price:</span>
-//                 <span>₹{car.price.toLocaleString()}</span>
-//               </div>
-//               <div className="flex justify-between">
-//                 <span className="text-gray-600">Taxes (8%):</span>
-//                 <span>₹{(car.price * taxRate).toLocaleString()}</span>
-//               </div>
-//               <div className="flex justify-between">
-//                 <span className="text-gray-600">Registration Fee:</span>
-//                 <span>₹{registrationFee}</span>
-//               </div>
-//               <div className="flex justify-between font-semibold">
-//                 <span className="text-gray-600">Total:</span>
-//                 <span>₹{totalCost.toLocaleString()}</span>
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="bg-white rounded-lg shadow-lg p-6">
-//             <h3 className="text-lg font-semibold mb-4">Schedule a Test Drive</h3>
-//             <form>
-//               <div className="space-y-4">
-//                 <div>
-//                   <label htmlFor="test-drive-date" className="block text-sm font-medium text-gray-700">
-//                     Preferred Date
-//                   </label>
-//                   <input
-//                     type="date"
-//                     id="test-drive-date"
-//                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-//                   />
-//                 </div>
-//                 <div>
-//                   <label htmlFor="test-drive-time" className="block text-sm font-medium text-gray-700">Preferred Time</label>
-//                   <select id="test-drive-time" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-//                     <option>Morning (9AM - 12PM)</option>
-//                     <option>Afternoon (12PM - 4PM)</option>
-//                     <option>Evening (4PM - 7PM)</option>
-//                   </select>
-//                 </div>
-//               </div>
-//               <button type="button" className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 font-semibold" onClick={testnotify}>
-//                 Schedule Test Drive
-//               </button>
-//             </form>
-//           </div>
-//         </div>
-//       </div>
-//     </main>
-//   </div>
-//   )
-// }
-
-
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, Heart, Share2, ChevronLeft, Maximize, Check, CircleAlert, CheckCircle2, Clock, DollarSign, Shield, Truck, CheckCircle } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft, Fuel, Settings2, Gauge, Calendar, Car, Shield,
+  CheckCircle, ChevronLeft, ChevronRight, Phone, Mail,
+  MapPin, Star, Share2, Heart, FileText, CreditCard
+} from 'lucide-react';
 import API_BASE_URL from '../config/apiConfig';
 
-export default function CarDetails() {
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+  .detail-root {
+    background: #fff;
+    color: #1A1A2E;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding-top: 100px;
+  }
+
+  /* BREADCRUMB */
+  .breadcrumb {
+    background: #F7F8FC;
+    border-bottom: 1px solid #E5E7F0;
+    padding: 14px 24px;
+  }
+  .breadcrumb-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: #8888A8;
+  }
+  .breadcrumb-inner a { color: #8888A8; text-decoration: none; transition: color .18s; }
+  .breadcrumb-inner a:hover { color: #3B6BF0; }
+  .breadcrumb-inner .sep { opacity: .4; }
+  .breadcrumb-inner .current { color: #1A1A2E; font-weight: 500; }
+  .back-btn {
+    display: flex; align-items: center; gap: 5px;
+    color: #8888A8; font-size: 13px; font-weight: 500;
+    background: none; border: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: color .18s; margin-right: 4px;
+  }
+  .back-btn:hover { color: #3B6BF0; }
+
+  /* LAYOUT */
+  .detail-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 32px 24px 64px;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 1024px) { .detail-inner { grid-template-columns: 1fr; } }
+
+  /* GALLERY */
+  .main-img-wrap {
+    position: relative; height: 460px;
+    border-radius: 12px; overflow: hidden;
+    background: #F7F8FC; margin-bottom: 10px;
+    border: 1px solid #E5E7F0;
+  }
+  .main-img { width: 100%; height: 100%; object-fit: cover; transition: opacity .3s; }
+  .img-placeholder { width: 100%; height: 100%; background: linear-gradient(135deg,#EEF2FF,#dce8ff); display: flex; align-items: center; justify-content: center; font-size: 80px; }
+
+  .gallery-badge {
+    position: absolute; top: 14px; left: 14px;
+    background: #CFE2FF; color: #084298;
+    font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 4px;
+  }
+  .gallery-actions { position: absolute; top: 14px; right: 14px; display: flex; gap: 7px; }
+  .gallery-action-btn {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(8px);
+    border: 1px solid #E5E7F0; color: #4A4A68;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .18s;
+  }
+  .gallery-action-btn:hover { background: #EEF2FF; color: #3B6BF0; border-color: #3B6BF0; }
+  .gallery-action-btn.liked { color: #E63946; border-color: rgba(230,57,70,.3); }
+
+  .gallery-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 36px; border-radius: 8px;
+    background: rgba(255,255,255,0.9); border: 1px solid #E5E7F0;
+    color: #4A4A68; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all .18s;
+  }
+  .gallery-arrow:hover { background: #3B6BF0; color: #fff; border-color: #3B6BF0; }
+  .gallery-arrow.left { left: 12px; }
+  .gallery-arrow.right { right: 12px; }
+
+  .gallery-dots {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 5px;
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+    padding: 6px 10px; border-radius: 20px; border: 1px solid #E5E7F0;
+  }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(59,107,240,.25); cursor: pointer; transition: all .2s; border: none; padding: 0; }
+  .nav-dot.active { background: #3B6BF0; width: 18px; border-radius: 3px; }
+
+  .thumb-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .thumb-row::-webkit-scrollbar { display: none; }
+  .thumb { width: 80px; height: 60px; border-radius: 8px; overflow: hidden; flex-shrink: 0; cursor: pointer; border: 2px solid transparent; transition: border-color .18s; background: #F7F8FC; }
+  .thumb.active { border-color: #3B6BF0; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* CAR INFO */
+  .car-info { margin-top: 28px; }
+
+  .info-header { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #E5E7F0; }
+  .info-title { font-family: 'Manrope', sans-serif; font-size: clamp(22px,3vw,32px); font-weight: 800; color: #1A1A2E; line-height: 1.15; margin-bottom: 10px; }
+  .info-sub { font-size: 13px; color: #8888A8; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  }
+  .status-available { background: #D1E7DD; color: #0A5C36; }
+  .status-sold { background: #F8D7DA; color: #842029; }
+
+  /* SPECS */
+  .specs-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(155px,1fr)); gap: 12px; margin-bottom: 28px; }
+  .spec-card {
+    background: #F7F8FC; border: 1px solid #E5E7F0; border-radius: 10px;
+    padding: 14px; display: flex; flex-direction: column; gap: 6px; transition: all .18s;
+  }
+  .spec-card:hover { border-color: #3B6BF0; background: #EEF2FF; }
+  .spec-icon { color: #3B6BF0; }
+  .spec-label { font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #8888A8; }
+  .spec-value { font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14px; color: #1A1A2E; }
+
+  /* SECTIONS */
+  .info-section { margin-bottom: 28px; }
+  .info-section-title {
+    font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase; color: #1A1A2E;
+    margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #E5E7F0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .info-section-title::before { content: ''; width: 3px; height: 14px; background: #3B6BF0; border-radius: 2px; display: inline-block; }
+  .description-text { font-size: 14px; color: #4A4A68; line-height: 1.8; }
+
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 8px; }
+  .feature-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4A4A68; font-weight: 500; }
+  .feature-dot { width: 6px; height: 6px; border-radius: 50%; background: #3B6BF0; flex-shrink: 0; }
+
+  /* SIDEBAR */
+  .detail-sidebar { position: sticky; top: 110px; display: flex; flex-direction: column; gap: 14px; }
+
+  .price-card { background: #fff; border: 1px solid #E5E7F0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .price-label { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #8888A8; margin-bottom: 6px; }
+  .price-main { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 36px; color: #1A1A2E; letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
+  .price-negotiable { font-size: 12px; color: #2D9C5A; font-weight: 500; display: flex; align-items: center; gap: 5px; margin-bottom: 20px; }
+
+  .sidebar-divider { height: 1px; background: #E5E7F0; margin: 16px 0; }
+
+  .breakdown-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; }
+  .breakdown-label { color: #8888A8; }
+  .breakdown-value { color: #1A1A2E; font-weight: 500; }
+  .breakdown-total { display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #E5E7F0; }
+  .breakdown-total .breakdown-label { color: #1A1A2E; font-weight: 700; }
+  .breakdown-total .breakdown-value { color: #3B6BF0; font-weight: 800; font-family: 'Manrope', sans-serif; font-size: 16px; }
+
+  .cta-buy-btn {
+    width: 100%; background: #3B6BF0; color: #fff; border: none;
+    padding: 14px; border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15px;
+    cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px;
+  }
+  .cta-buy-btn:hover { background: #2952CC; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,107,240,.3); }
+  .cta-buy-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .contact-card { background: #fff; border: 1px solid #E5E7F0; border-radius: 12px; padding: 20px; }
+  .contact-title { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #1A1A2E; margin-bottom: 16px; }
+  .contact-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F0F0F8; }
+  .contact-row:last-child { border-bottom: none; }
+  .contact-icon { width: 36px; height: 36px; border-radius: 8px; background: #EEF2FF; display: flex; align-items: center; justify-content: center; color: #3B6BF0; flex-shrink: 0; }
+  .contact-label { font-size: 10px; color: #8888A8; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  .contact-value { font-size: 13px; color: #1A1A2E; font-weight: 600; }
+
+  .trust-badges { background: #F7F8FC; border: 1px solid #E5E7F0; border-radius: 12px; padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .trust-badge { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #4A4A68; font-weight: 500; }
+
+  /* SKELETON */
+  .skeleton { background: linear-gradient(90deg,#f0f2f8 25%,#e6eaf6 50%,#f0f2f8 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+`;
+
+const DEFAULT_FEATURES = ['Air Conditioning','Power Steering','ABS Brakes','Airbags','Bluetooth','Backup Camera','Keyless Entry','Navigation System'];
+
+export default function BuyCarDetails() {
   const { id } = useParams();
-  const [car, setCar] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [downPayment, setDownPayment] = useState(5000);
-  const [loanTerm, setLoanTerm] = useState(60);
-  const [interestRate, setInterestRate] = useState(3.5);
-  const [showBreakdown, setShowBreakdown] = useState(false);
+  const navigate = useNavigate();
+  const [car,       setCar]       = useState(null);
+  const [loading,   setLoading]   = useState(true);
+  const [activeImg, setActiveImg] = useState(0);
+  const [liked,     setLiked]     = useState(false);
 
+  // original fetch logic
   useEffect(() => {
-    const fetchCarDetails = async () => {
+    const fetchCar = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/listings/listings/${id}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (!data) throw new Error('No data received');
-
-        const transformedCar = {
-          id: data.listing_id,
-          make: data.make || 'NA',
-          location: data.location || 'NA',
-          model: data.model || 'NA',
-          year: data.year || new Date().getFullYear(),
-          price: data.price?.$numberDecimal ? parseFloat(data.price.$numberDecimal) : 0,
-          mileage: data.mileage || 0,
-          carType: data.carType || 'NA',
-          images: data.images && data.images.length > 0
-            ? data.images.map(image => `${API_BASE_URL}${image.url}`)
-            : ['/placeholder-car-image.jpg'],
-          engine: data.engine || 'NA',
-          transmission: data.transmission || 'NA',
-          fuelType: data.fuelType || 'NA',
-          seatingCapacity: data.seatingCapacity || 'NA',
-          exteriorColor: data.exteriorColor || 'NA',
-          interiorColor: data.interiorColor || 'NA',
-          vin: data.vin || 'NA',
-          owner: data.owner || 'NA',
-          certificationReport: data.certificationReport || 'NA',
-          extraFeatures: {
-            gps: data.extraFeatures?.gps || false,
-            sunroof: data.extraFeatures?.sunroof || false,
-            leatherSeats: data.extraFeatures?.leatherSeats || false,
-            backupCamera: data.extraFeatures?.backupCamera || false,
-          }
-        };
-
-        setCar(transformedCar);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
+        const res  = await fetch(`${API_BASE_URL}/api/listings/listings/${id}`);
+        const data = await res.json();
+        setCar(data);
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
     };
-
-    fetchCarDetails();
-
-    if (id) {
-      sessionStorage.setItem('currentListingId', id);
-    }
+    fetchCar();
   }, [id]);
 
-  const calculateMonthlyPayment = () => {
-    if (!car) return '0';
-    const principal = car.price - downPayment;
-    const monthlyRate = interestRate / 100 / 12;
-    const numberOfPayments = loanTerm;
-    const monthlyPayment = (principal * monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
-      (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-    return monthlyPayment.toFixed(2);
+  const imgUrl = (img) => {
+    if (!img) return null;
+    if (typeof img === 'string') return img.startsWith('http') ? img : `${API_BASE_URL}${img}`;
+    if (img.url) return img.url.startsWith('http') ? img.url : `${API_BASE_URL}${img.url}`;
+    return null;
   };
 
-  const taxRate = 0.08;
-  const registrationFee = 300;
+  const images  = car?.images?.map(imgUrl).filter(Boolean) || [];
+  const price   = car?.price?.$numberDecimal ? parseFloat(car.price.$numberDecimal) : (car?.price || 0);
+  const regFee  = 5000;
+  const total   = price + regFee;
 
+  // ── LOADING ──
   if (loading) return (
-    <div className="flex justify-center items-center min-h-screen">
-      <p>Loading car details...</p>
-    </div>
-  );
-
-  if (error) return (
-    <div className="flex justify-center items-center min-h-screen text-red-500">
-      <p>Error: {error}</p>
-    </div>
-  );
-
-  if (!car) return (
-    <div className="flex justify-center items-center min-h-screen">
-      <p>Car not found</p>
-    </div>
-  );
-
-  const totalCost = car.price + (car.price * taxRate) + registrationFee;
-
-  const toggleBreakdown = () => {
-    setShowBreakdown(!showBreakdown);
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: document.title,
-        url: window.location.href,
-      }).catch((error) => console.error("Error sharing:", error));
-    } else {
-      // Fallback for browsers that do not support the Share API
-      const shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(document.title)}`;
-      window.open(shareUrl, '_blank');
-    }
-  };
-
-  
-  return (
-    <div className="min-h-screen bg-background dark:bg-gray-900 flex justify-center">
-      <main className="container max-w-[88%] px-4 py-8">
-        <div className="flex justify-between items-center mb-4">
-          <nav className="flex text-sm text-gray-600 dark:text-gray-400" aria-label="Breadcrumb">
-            <ol className="inline-flex items-center space-x-1 md:space-x-3">
-              <li className="inline-flex items-center">
-                <a href="/" className="hover:text-gray-900 dark:hover:text-gray-200">Home</a>
-              </li>
-              <ChevronRight className="w-4 h-4 mx-1" />
-              <li className="inline-flex items-center">
-                <a href="/buy" className="hover:text-gray-900 dark:hover:text-gray-200">Buy</a>
-              </li>
-              <ChevronRight className="w-4 h-4 mx-1" />
-              <li><span className="text-gray-400 dark:text-gray-500">{car.make}</span></li>
-              <ChevronRight className="w-4 h-4 mx-1" />
-              <li><span className="text-black dark:text-gray-100 font-semibold">{car.model}</span></li>
-            </ol>
-          </nav>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
-          <div className="p-8 space-y-12">
-            <div className="flex justify-between items-center">
-              <h1 className="text-5xl font-bold text-primary dark:text-gray-100">{car.year} {car.make} {car.model}</h1>
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setIsWishlisted(!isWishlisted)}
-                  className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition duration-300 transform hover:scale-110"
-                >
-                  <Heart className={`w-8 h-8 ${isWishlisted ? 'text-red-500 fill-current' : ''}`} />
-                </button>
-                <button className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition duration-300 transform hover:scale-110" onClick={handleShare}>
-                  <Share2 className="w-8 h-8" />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4 justify-center">
-              <div className="flex justify-center items-center" style={{ width: '100%' }}>
-                <div
-                  className="relative aspect-video rounded-3xl overflow-hidden"
-                  style={{ width: 'calc(100% - 100px)', padding: '10px' }}
-                >
-                  <div className="relative w-full h-full">
-                    <img
-                      alt="Car image"
-                      src={car.images[currentImageIndex]}
-                      className="absolute inset-0 w-full h-full object-contain rounded-2xl"
-                    />
-                    {car.images.length > 1 && (
-                      <>
-                        <button
-                          onClick={() =>
-                            setCurrentImageIndex((prev) => (prev - 1 + car.images.length) % car.images.length)
-                          }
-                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition duration-300"
-                        >
-                          <ChevronLeft className="w-6 h-6" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            setCurrentImageIndex((prev) => (prev + 1) % car.images.length)
-                          }
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition duration-300"
-                        >
-                          <ChevronRight className="w-6 h-6" />
-                        </button>
-                      </>
-                    )}
-                    {/* <button className="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition duration-300">
-                      <Maximize className="w-6 h-6" />
-                    </button> */}
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-center">
-                <div
-                  className="grid grid-cols-4 gap-4"
-                  style={{ width: '80%', maxWidth: '600px' }}
-                >
-                  {car.images.slice(0, 4).map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`relative aspect-video rounded-xl overflow-hidden transition duration-300 ${index === currentImageIndex
-                        ? 'ring-4 ring-primary dark:ring-primary-dark'
-                        : 'hover:opacity-75'
-                        }`}
-                      style={{ width: 'calc(100% - 10px)', height: 'calc(100% - 10px)' }}
-                    >
-                      <img
-                        alt={`Car image ${index + 1}`}
-                        src={image}
-                        className="absolute inset-0 w-full h-full object-contain"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-              <div className="lg:col-span-2 space-y-12">
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-3xl p-8">
-                  <h2 className="text-3xl font-bold mb-6 text-primary dark:text-gray-100">Vehicle Specifications</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[
-                      { label: 'Make', value: car.make },
-                      { label: 'Model', value: car.model },
-                      { label: 'Year', value: car.year },
-                      { label: 'Location', value: car.location },
-                      { label: 'Mileage', value: `${car.mileage.toLocaleString()} miles` },
-                      { label: 'Engine', value: car.engine },
-                      { label: 'Transmission', value: car.transmission },
-                      { label: 'Fuel Type', value: car.fuelType },
-                      { label: 'Seating Capacity', value: car.seatingCapacity },
-                      { label: 'Exterior Color', value: car.exteriorColor },
-                      { label: 'Interior Color', value: car.interiorColor },
-                      { label: 'Car Type', value: car.carType },
-                      { label: 'VIN', value: car.vin },
-                      { label: 'Condition', value: car.certificationReport },
-                      { label: 'Owners', value: car.owner },
-                    ].map((spec, index) => (
-                      <div key={index} className="flex flex-col">
-                        <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">{spec.label}</span>
-                        <span className="font-medium text-lg dark:text-gray-200">{spec.value}</span>
-                      </div>
-                    ))}
-                    {car.extraFeatures && (
-                      <div className="mt-4">
-                        <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">Extra Features:</span>
-                        <ul className="list-disc list-inside">
-                          {Object.entries(car.extraFeatures)
-                            .filter(([_, value]) => value) // Only include features that are true
-                            .map(([key]) => (
-                              <li key={key} className="font-medium text-lg dark:text-gray-200">
-                                {key
-                                  .replace(/([A-Z])/g, ' $1') // Convert camelCase to Title Case
-                                  .replace(/^./, str => str.toUpperCase())} {/* Capitalize the first letter */}
-                              </li>
-                            ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-3xl p-8">
-                  <h2 className="text-3xl font-bold mb-6 text-primary dark:text-gray-100">Vehicle History</h2>
-                  <div className="space-y-6">
-                    {[
-                      { icon: CircleAlert, title: 'Ownership', description: '1 previous owner (lease vehicle)' },
-                      { icon: CheckCircle2, title: 'Accident History', description: 'No accidents or damage reported' },
-                      { icon: CheckCircle2, title: 'Service Records', description: 'Regular maintenance up to date' },
-                      { icon: Clock, title: 'Last Service', description: '3 months ago' },
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-start space-x-4">
-                        <item.icon className="w-8 h-8 text-accent dark:text-accent-dark" />
-                        <div>
-                          <h3 className="font-semibold text-lg dark:text-gray-200">{item.title}</h3>
-                          <p className="text-gray-600 dark:text-gray-400">{item.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-3xl p-8">
-                  <h2 className="text-3xl font-bold mb-6 text-primary dark:text-gray-100">Condition Summary</h2>
-                  <div className="flex items-center mb-4">
-                    <CheckCircle className="w-6 h-6 text-green-500 dark:text-green-400 mr-2" />
-                    <span className="font-semibold text-2xl dark:text-gray-200">Certified Pre-Owned</span>
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300 mb-4 text-lg">
-                    This vehicle has undergone a rigorous inspection and reconditioning process.
-                    It is in excellent condition and comes with an extended warranty.
-                  </p>
-                  <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 text-lg font-medium">
-                    <li>Regular maintenance up to date</li>
-                    <li>No accident history reported</li>
-                    <li>New tires installed recently</li>
-                    <li>Minor wear on driver's seat (see images)</li>
-                    <li>Small paint touch-up on rear bumper</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="space-y-8">
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-3xl p-8">
-                  <h2 className="text-3xl font-bold mb-6 text-primary dark:text-gray-100">Pricing</h2>
-                  <div className="space-y-6">
-                    <div className="bg-white dark:bg-gray-600 rounded-2xl p-6 shadow-md">
-                      <p className="text-4xl font-bold text-primary dark:text-gray-100">₹{car.price.toLocaleString()}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                        Starting at ₹{calculateMonthlyPayment()}/month with ₹{downPayment.toLocaleString()} down for {loanTerm} months
-                      </p>
-                      <button
-                        onClick={toggleBreakdown}
-                        className="text-lg font-bold text-primary dark:text-primary-dark underline mt-4"
-                      >
-                        {showBreakdown ? 'Hide Pricing Breakdown' : 'Show Pricing Breakdown'}
-                      </button>
-                      {showBreakdown && (
-                        <div className="mt-4 text-base">
-                          <p>
-                            <strong>Base Price:</strong> ₹{car.price.toLocaleString()}
-                          </p>
-                          <p>
-                            <strong>Taxes (8%):</strong> ₹{car.price * 0.08}
-                          </p>
-                          <p>
-                            <strong>Registration Fee:</strong> ₹300
-                          </p>
-                          <p>
-                            {/* <strong>Total:</strong> ₹{car.price + car.price * 0.08 + 300} */}
-                            <strong>Total:</strong> ₹{totalCost}
-                          </p>
-                        </div>
-                      )}
-
-                    </div>
-                    <div className="space-y-4">
-                      <Link to={`/payment/${car.id}`} className="block">
-                        <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-white bg-black dark:bg-gray-200 dark:text-gray-800 hover:bg-primary/90 dark:hover:bg-gray-300 h-10 px-4 py-2 w-full btn-primary">
-                          <DollarSign className="w-5 h-5 mr-2" />
-                          Proceed to Payment
-                        </button>
-                      </Link>
-                      <Link to="/contactUs" className="block">
-                        <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background dark:bg-gray-700 hover:bg-accent hover:text-accent-foreground dark:hover:bg-gray-600 h-10 px-4 py-2 w-full btn-secondary">
-                          Contact Us
-                        </button>
-                      </Link>
-                    </div>
-                    <div className="pt-6 border-t border-gray-200 dark:border-gray-600 space-y-4">
-                      <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-                        <Shield className="w-5 h-5 text-secondary dark:text-secondary-dark" />
-                        <span>30-day money-back guarantee</span>
-                      </div>
-                      <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-                        <Truck className="w-5 h-5 text-secondary dark:text-secondary-dark" />
-                        <span>Free delivery within 50km</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
-                  <h2 className="text-2xl font-semibold mb-4 dark:text-gray-100">Schedule a Test Drive</h2>
-                  <form className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label htmlFor="date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Preferred Date
-                        </label>
-                        <input
-                          className="flex h-10 w-full rounded-md border border-input bg-background dark:bg-gray-600 dark:text-gray-100 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="date"
-                          type="date"
-                          name="date"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="time" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Preferred Time
-                        </label>
-                        <select
-                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background dark:bg-gray-600 dark:text-gray-100 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          id="time"
-                          name="time"
-                        >
-                          <option value="">Select a time slot</option>
-                          <option value="morning">Morning (9AM - 12PM)</option>
-                          <option value="afternoon">Afternoon (12PM - 3PM)</option>
-                          <option value="evening">Evening (3PM - 6PM)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <input type='text' className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background dark:bg-gray-600 dark:text-gray-100 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder='Enter your location' required />
-                    <button
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-black text-white dark:bg-white dark:text-primary-foreground-dark hover:bg-primary/90 dark:hover:bg-primary-dark/90 h-10 px-4 py-2 w-full"
-                      type="submit" >
-                      Schedule Test Drive
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </div>
-            {/* <div>
-              <h2 className="text-3xl font-bold mb-8 text-primary dark:text-gray-100">Similar Cars</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                  { name: '2022 Toyota Corolla', price: '₹23,000', mileage: 18000, transmission: 'Automatic' },
-                  { name: '2022 Mazda 3', price: '₹24,000', mileage: 16500, transmission: 'Manual' },
-                  { name: '2022 Hyundai Elantra', price: '₹22,000', mileage: 20000, transmission: 'Automatic' },
-                ].map((similarCar, index) => (
-                  <a key={index}
-                    href={`/car/${index + 1}`}
-                    className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 transform hover:scale-105"
-                  >
-                    <div className="relative aspect-video">
-                      <img
-                        alt={similarCar.name}
-                        src={`/placeholder.svg?height=200&width=300&text=${similarCar.name.replace(/\s+/g, '+')}`}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-6">
-                      <h3 className="font-semibold text-xl mb-2 dark:text-gray-100">{similarCar.name}</h3>
-                      <div className="space-y-1">
-                        <p className="text-primary dark:text-primary-dark font-bold text-lg">{similarCar.price}</p>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          <span>{similarCar.mileage.toLocaleString()} miles</span>
-                          <span className="mx-2">•</span>
-                          <span>{similarCar.transmission}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div> */}
+    <div className="detail-root" style={{ padding: '40px 24px' }}>
+      <style>{STYLES}</style>
+      <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 360px', gap: 32 }}>
+        <div>
+          <div className="skeleton" style={{ height: 460, borderRadius: 12, marginBottom: 10 }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ width: 80, height: 60, borderRadius: 8 }} />)}
+          </div>
+          <div style={{ marginTop: 28 }}>
+            <div className="skeleton" style={{ height: 36, width: '55%', marginBottom: 12 }} />
+            <div className="skeleton" style={{ height: 16, width: '35%' }} />
           </div>
         </div>
-      </main>
+        <div className="skeleton" style={{ height: 320, borderRadius: 12 }} />
+      </div>
+    </div>
+  );
+
+  // ── NOT FOUND ──
+  if (!car) return (
+    <div className="detail-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <style>{STYLES}</style>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 64, marginBottom: 16 }}>🚗</div>
+        <div style={{ fontFamily: 'Manrope,sans-serif', fontSize: 22, fontWeight: 700, color: '#1A1A2E', marginBottom: 8 }}>Car not found</div>
+        <button className="back-btn" onClick={() => navigate('/CarExplore')} style={{ color: '#3B6BF0', fontSize: 14 }}>← Back to listings</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="detail-root">
+      <style>{STYLES}</style>
+
+      {/* BREADCRUMB */}
+      <div className="breadcrumb">
+        <div className="breadcrumb-inner">
+          <button className="back-btn" onClick={() => navigate('/CarExplore')}><ArrowLeft size={14} /></button>
+          <a href="/">Home</a><span className="sep">/</span>
+          <a href="/CarExplore">Buy Car</a><span className="sep">/</span>
+          <span className="current">{car.make} {car.model}</span>
+        </div>
+      </div>
+
+      <div className="detail-inner">
+        {/* LEFT */}
+        <div>
+          {/* Gallery */}
+          <div style={{ position: 'relative' }}>
+            <div className="main-img-wrap">
+              {images.length > 0
+                ? <img src={images[activeImg]} alt={`${car.make} ${car.model}`} className="main-img" />
+                : <div className="img-placeholder">🚗</div>
+              }
+              <div className="gallery-badge">For Sale</div>
+              <div className="gallery-actions">
+                <button className={`gallery-action-btn${liked ? ' liked' : ''}`} onClick={() => setLiked(!liked)}>
+                  <Heart size={15} fill={liked ? '#E63946' : 'none'} />
+                </button>
+                <button className="gallery-action-btn" onClick={() => navigator.clipboard?.writeText(window.location.href)}>
+                  <Share2 size={15} />
+                </button>
+              </div>
+              {images.length > 1 && (
+                <>
+                  <button className="gallery-arrow left" onClick={() => setActiveImg(p => (p - 1 + images.length) % images.length)}><ChevronLeft size={17} /></button>
+                  <button className="gallery-arrow right" onClick={() => setActiveImg(p => (p + 1) % images.length)}><ChevronRight size={17} /></button>
+                  <div className="gallery-dots">
+                    {images.map((_, i) => <button key={i} className={`nav-dot${i === activeImg ? ' active' : ''}`} onClick={() => setActiveImg(i)} />)}
+                  </div>
+                </>
+              )}
+            </div>
+            {images.length > 1 && (
+              <div className="thumb-row">
+                {images.map((img, i) => (
+                  <div key={i} className={`thumb${i === activeImg ? ' active' : ''}`} onClick={() => setActiveImg(i)}>
+                    <img src={img} alt={`thumb ${i + 1}`} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="car-info">
+            <div className="info-header">
+              <h1 className="info-title">{car.year} {car.make} {car.model}</h1>
+              <div className="info-sub">
+                <span className={`status-badge ${car.listing_status === 'active' ? 'status-available' : 'status-sold'}`}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
+                  {car.listing_status === 'active' ? 'Available' : 'Sold'}
+                </span>
+                {car.carType && <><span>·</span><span>{car.carType}</span></>}
+                {car.location && <><span>·</span><span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} />{car.location}</span></>}
+              </div>
+            </div>
+
+            {/* Specs */}
+            <div className="specs-grid">
+              {[
+                { icon: Calendar,  label: 'Year',         value: car.year },
+                { icon: Gauge,     label: 'Mileage',      value: `${(car.mileage || 0).toLocaleString()} km` },
+                { icon: Fuel,      label: 'Fuel',         value: car.fuelType || 'Petrol' },
+                { icon: Settings2, label: 'Transmission', value: car.transmission || 'Auto' },
+                { icon: Car,       label: 'Body Type',    value: car.carType || '—' },
+                { icon: Shield,    label: 'Condition',    value: car.condition || 'Used' },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="spec-card">
+                  <Icon size={17} className="spec-icon" />
+                  <div className="spec-label">{label}</div>
+                  <div className="spec-value">{value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Description */}
+            {car.description && (
+              <div className="info-section">
+                <div className="info-section-title">About this Car</div>
+                <p className="description-text">{car.description}</p>
+              </div>
+            )}
+
+            {/* Features */}
+            <div className="info-section">
+              <div className="info-section-title">Features & Equipment</div>
+              <div className="features-grid">
+                {(car.features?.length ? car.features : DEFAULT_FEATURES).map((f, i) => (
+                  <div key={i} className="feature-item"><div className="feature-dot" />{f}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SIDEBAR */}
+        <div className="detail-sidebar">
+          {/* Price */}
+          <div className="price-card">
+            <div className="price-label">Asking Price</div>
+            <div className="price-main">KSH {price.toLocaleString()}</div>
+            <div className="price-negotiable"><CheckCircle size={13} /> Price is negotiable</div>
+
+            <div className="sidebar-divider" />
+
+            <div className="breakdown-row"><span className="breakdown-label">Vehicle Price</span><span className="breakdown-value">KSH {price.toLocaleString()}</span></div>
+            <div className="breakdown-row"><span className="breakdown-label">Registration Fee</span><span className="breakdown-value">KSH {regFee.toLocaleString()}</span></div>
+            <div className="breakdown-total">
+              <span className="breakdown-label">Total Estimate</span>
+              <span className="breakdown-value">KSH {total.toLocaleString()}</span>
+            </div>
+
+            <button
+              className="cta-buy-btn"
+              onClick={() => navigate(`/payment/${car.listing_id}`)}
+              disabled={car.listing_status !== 'active'}
+            >
+              <CreditCard size={16} />
+              {car.listing_status === 'active' ? 'Proceed to Buy' : 'No Longer Available'}
+            </button>
+          </div>
+
+          {/* Contact */}
+          <div className="contact-card">
+            <div className="contact-title">Contact Dealer</div>
+            <div className="contact-row">
+              <div className="contact-icon"><Phone size={14} /></div>
+              <div><div className="contact-label">Phone</div><div className="contact-value">+254 700 000 000</div></div>
+            </div>
+            <div className="contact-row">
+              <div className="contact-icon"><Mail size={14} /></div>
+              <div><div className="contact-label">Email</div><div className="contact-value">info@roditec.co.ke</div></div>
+            </div>
+            <div className="contact-row">
+              <div className="contact-icon"><MapPin size={14} /></div>
+              <div><div className="contact-label">Location</div><div className="contact-value">Nairobi, Kenya</div></div>
+            </div>
+          </div>
+
+          {/* Trust */}
+          <div className="trust-badges">
+            {[
+              { icon: Shield,      text: 'Verified Listing' },
+              { icon: Star,        text: 'Top Rated' },
+              { icon: FileText,    text: 'Full Docs' },
+              { icon: CheckCircle, text: 'Inspected' },
+            ].map(({ icon: Icon, text }, i) => (
+              <div key={i} className="trust-badge">
+                <Icon size={14} color="#3B6BF0" />{text}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -16,3 +16,10 @@ code {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import './theme.css';
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color 0.28s ease, color 0.28s ease;
+}

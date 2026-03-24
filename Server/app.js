@@ -1,4 +1,5 @@
 // app.js
+require('dotenv').config();
 require('./db'); // MongoDB connection
 
 const express = require('express');
