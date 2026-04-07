@@ -22,6 +22,17 @@ const reportGenerate = require('./api/report-generate');  // Import the report g
 app.use(cors());
 app.use(express.json()); // To parse JSON request bodies
 app.use(express.urlencoded({ extended: true }));
+
+// Validate MongoDB connection before handling API requests
+app.use('/api', (req, res, next) => {
+  const state = mongoose.connection.readyState;
+  // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+  if (state !== 1) {
+    console.error(`MongoDB not ready (readyState=${state}) for request ${req.method} ${req.originalUrl}`);
+    return res.status(503).json({ error: 'Database connection unavailable. Please try again later.' });
+  }
+  next();
+});
 app.use('/api/reports', reportGenerate);  // Mount the report generation functionality
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
