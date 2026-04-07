@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ChevronDown, Car, Search, User, LogOut, Shield } from 'lucide-react';
+import { Menu, X, ChevronDown, Search, User, LogOut, Shield } from 'lucide-react';
+import roditecLogo from '../assets/roditec-logo.jpg';
 
 const NAV_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
@@ -31,22 +32,16 @@ const NAV_STYLES = `
   }
 
   .nav-logo {
-    font-family: 'Manrope', sans-serif;
-    font-weight: 800;
-    font-size: 22px;
-    color: #1A1A2E;
     text-decoration: none;
-    letter-spacing: -0.3px;
     display: flex;
     align-items: center;
-    gap: 8px;
     flex-shrink: 0;
   }
-  .logo-dot {
-    width: 8px; height: 8px;
-    background: #3B6BF0;
-    border-radius: 50%;
-    display: inline-block;
+  .nav-logo img {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    display: block;
   }
 
   .nav-links {
@@ -371,8 +366,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="nav-logo">
-            <Car size={20} color="#3B6BF0" />
-            Roditec<span className="logo-dot" />
+            <img src={roditecLogo} alt="Roditec Automotives" />
           </Link>
 
           {/* Desktop links */}
@@ -455,9 +449,8 @@ export default function Navbar() {
       {/* Mobile drawer */}
       <div className={`mobile-drawer${isOpen ? ' open' : ''}`}>
         <div className="mobile-drawer-header">
-          <Link to="/" className="nav-logo" style={{ fontSize: 18 }}>
-            <Car size={18} color="#3B6BF0" />
-            Roditec<span className="logo-dot" />
+          <Link to="/" className="nav-logo">
+            <img src={roditecLogo} alt="Roditec Automotives" style={{ height: 36 }} />
           </Link>
           <button className="icon-btn" onClick={() => setIsOpen(false)}>
             <X size={16} />

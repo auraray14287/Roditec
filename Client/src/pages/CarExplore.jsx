@@ -145,13 +145,13 @@ export default function CarExplore() {
   const [carType,      setCarType]      = useState('');
   const [year,         setYear]         = useState('');
   const [transmission, setTransmission] = useState('All');
-  const [priceRange,   setPriceRange]   = useState(100000);
+  const [priceRange,   setPriceRange]   = useState(15000000);
   const [sortOrder,    setSortOrder]    = useState('none');
   const [minRating,    setMinRating]    = useState(0);
   const [viewMode,     setViewMode]     = useState('grid');
   const [filtersOpen,  setFiltersOpen]  = useState(false);
+  const [maxPrice,     setMaxPrice]     = useState(15000000);
 
-  // ── original fetch logic ──
   useEffect(() => {
     setLoading(true);
     const fetchCars = async () => {
@@ -161,13 +161,13 @@ export default function CarExplore() {
         const filtered = data.filter(c =>
           c.RentSell === (mode === 'rent' ? 'Rent' : 'Sell') && c.listing_status === 'active'
         );
-        setCars(filtered.map((c, i) => ({
+        const mapped = filtered.map((c, i) => ({
           id:           c.listing_id || i,
           listing_id:   c.listing_id,
           make:         c.make         || 'Unknown',
           model:        c.model        || 'Model',
           year:         c.year         || new Date().getFullYear(),
-          price:        c.price?.$numberDecimal ? parseFloat(c.price.$numberDecimal) : 0,
+          price:        c.price?.$numberDecimal ? parseFloat(c.price.$numberDecimal) : (c.price || 0),
           mileage:      c.mileage      || 0,
           carType:      c.carType      || 'Unknown',
           fuelType:     c.fuelType     || 'Petrol',
@@ -176,7 +176,15 @@ export default function CarExplore() {
           rentSell:     c.RentSell,
           rating:       (Math.random() * 2 + 3).toFixed(1),
           reviews:      Math.floor(Math.random() * 100) + 1,
-        })));
+        }));
+        setCars(mapped);
+        // Dynamically set max price from actual data
+        if (mapped.length > 0) {
+          const highest = Math.max(...mapped.map(c => c.price));
+          const roundedMax = Math.ceil(highest / 1000000) * 1000000 || 15000000;
+          setMaxPrice(roundedMax);
+          setPriceRange(roundedMax);
+        }
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     };
@@ -187,7 +195,6 @@ export default function CarExplore() {
   const allTypes = [...new Set(cars.map(c => c.carType))].filter(Boolean);
   const allYears = [...new Set(cars.map(c => c.year))].sort().reverse();
 
-  // ── original filter logic ──
   const filtered = cars.filter(c => {
     if (c.price > priceRange) return false;
     if (make && c.make !== make) return false;
@@ -205,13 +212,19 @@ export default function CarExplore() {
 
   const resetFilters = () => {
     setMake(''); setCarType(''); setYear('');
-    setTransmission('All'); setPriceRange(100000);
+    setTransmission('All'); setPriceRange(maxPrice);
     setSortOrder('none'); setMinRating(0); setSearchQuery('');
   };
 
   const imgSrc = (car) => {
     if (!car.image) return '';
     return car.image.startsWith('http') ? car.image : `${API_BASE_URL}${car.image}`;
+  };
+
+  const fmtPrice = (n) => {
+    if (n >= 1000000) return `KSH ${(n/1000000).toFixed(1)}M`;
+    if (n >= 1000) return `KSH ${(n/1000).toFixed(0)}K`;
+    return `KSH ${n.toLocaleString()}`;
   };
 
   const CardSkeleton = () => (
@@ -300,15 +313,15 @@ export default function CarExplore() {
             <div className="filter-group-label">Max Price (KSH)</div>
             <div className="price-range-display">
               <span>KSH 0</span>
-              <span className="price-current">KSH {priceRange.toLocaleString()}</span>
+              <span className="price-current">{fmtPrice(priceRange)}</span>
             </div>
             <input
               type="range" className="range-input"
-              min="0" max="100000" step="1000"
+              min="0" max={maxPrice} step="100000"
               value={priceRange}
               onChange={e => setPriceRange(parseInt(e.target.value))}
             />
-            <div style={{ fontSize: 11, color: '#8888A8', marginTop: 4, textAlign: 'right' }}>KSH 100,000+</div>
+            <div style={{ fontSize: 11, color: '#8888A8', marginTop: 4, textAlign: 'right' }}>{fmtPrice(maxPrice)}+</div>
           </div>
 
           <div className="filter-group">
